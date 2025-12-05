@@ -9,6 +9,7 @@ export default function Sidebar() {
         display: "flex",
         flexDirection: "column",
         gap: "20px",
+        height: "100vh",
       }}
     >
       <h2 style={{ fontSize: "18px", fontWeight: "bold" }}>Spotify</h2>
