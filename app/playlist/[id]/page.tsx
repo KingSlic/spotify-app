@@ -1,22 +1,30 @@
-
+import { getPlaylistById, getTracksForPlaylist } from "@/lib/fakeDb";
+import TrackTable from "./components/TrackTable";
 
 interface PlaylistParams {
   id: string;
 }
 
-export default async function PlaylistPage({ params }: { params: Promise<PlaylistParams> }) {
-
+export default async function PlaylistPage({
+  params,
+}: {
+  params: Promise<PlaylistParams>;
+}) {
+  // Unwrap dynamic params
   const { id } = await params;
 
-  // TEMP FAKE DATA — we will replace with real DB/API later
-  const playlist = {
-    id,
-    name: "Daily Mix 1",
-    description: "A mix of your favorites. Updated daily.",
-    cover: "/placeholder-cover.jpg",
-    creator: "Made for Gerry",
-    songCount: 50,
-  };
+  // Load playlist + associated tracks
+  const playlist = getPlaylistById(id);
+  const tracks = getTracksForPlaylist(id);
+
+  // Handle not found
+  if (!playlist) {
+    return (
+      <div className="text-white p-6">
+        <h1 className="text-2xl font-bold">Playlist not found.</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="text-white p-6">
@@ -27,24 +35,31 @@ export default async function PlaylistPage({ params }: { params: Promise<Playlis
         {/* COVER ART */}
         <div className="w-48 h-48 shadow-lg">
           <img
-            src={playlist.cover}
-            alt={playlist.name}
+            src={playlist.image}       // <-- updated from playlist.cover
+            alt={playlist.title}       // <-- updated from playlist.name
             className="w-full h-full object-cover rounded-md"
           />
         </div>
 
         {/* TEXT INFO */}
         <div className="flex flex-col">
-          <p className="uppercase text-sm font-medium text-zinc-300">Playlist</p>
+
+          <p className="uppercase text-sm font-medium text-zinc-300">
+            {playlist.type}
+          </p>
 
           <h1 className="text-6xl font-extrabold mt-2 mb-4">
-            {playlist.name}
+            {playlist.title}
           </h1>
 
-          <p className="text-zinc-300 mb-2">{playlist.description}</p>
+          {playlist.subtitle && (
+            <p className="text-zinc-300 mb-2">{playlist.subtitle}</p>
+          )}
 
           <p className="text-sm text-zinc-400">
-            {playlist.creator} • {playlist.songCount} songs
+            {playlist.creator}
+            {" • "}
+            {tracks.length} songs
           </p>
         </div>
       </div>
@@ -64,33 +79,8 @@ export default async function PlaylistPage({ params }: { params: Promise<Playlis
         </button>
       </div>
 
-      const fakeTracks = [
-        {
-          id: "1",
-          title: "Save Your Tears",
-          artists: ["The Weeknd"],
-          album: "After Hours",
-          duration: "3:36",
-        },
-        {
-          id: "2",
-          title: "Blinding Lights",
-          artists: ["The Weeknd"],
-          album: "After Hours",
-          duration: "3:20",
-        },
-        {
-          id: "3",
-          title: "Passionfruit",
-          artists: ["Drake"],
-          album: "More Life",
-          duration: "4:18",
-        },
-      ];
-
-
-      {/* TRACK LIST - Placeholder for now */}
-      <TrackTable tracks={fakeTracks} />
+      {/* TRACK LIST */}
+      <TrackTable tracks={tracks} />
 
     </div>
   );
