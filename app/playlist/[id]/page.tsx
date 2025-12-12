@@ -10,7 +10,7 @@ export default async function PlaylistPage({
 }: {
   params: Promise<PlaylistParams>;
 }) {
-  // Unwrap dynamic params
+
   const { id } = await params;
 
   // Load playlist + associated tracks
@@ -29,7 +29,7 @@ export default async function PlaylistPage({
   return (
     <div className="text-white p-6">
 
-      {/* HEADER SECTION */}
+      {/* PLAYLIST HEADER */}
       <div className="flex items-end gap-6 mb-10">
 
         {/* COVER ART */}

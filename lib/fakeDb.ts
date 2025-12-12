@@ -6,6 +6,16 @@ import { Playlist } from "@/types/playlist";
  * Global track pool
  * (You can add more later – this is enough to power demos + CRUD.)
  */
+
+
+// Simulated recent activity (most recent first)
+export const recentlyPlayedPlaylistIds = [
+  "3",
+  "1",
+  "2",
+];
+
+
 export const tracks: Track[] = [
   {
     id: "t1",
@@ -392,6 +402,27 @@ export const playlists: Playlist[] = [
   },
 ];
 
+
+export const homeSections = [
+  {
+    id: "good-evening",
+    title: "Good evening",
+    playlistIds: ["1", "2", "3"],
+  },
+  {
+    id: "made-for-you",
+    title: "Made for you",
+    playlistIds: ["1", "2"],
+  },
+  {
+    id: "recently-played",
+    title: "Recently played",
+    dynamic: "recently-played"
+  },
+];
+
+
+
 /** Helper: find a playlist by ID */
 export function getPlaylistById(id: string): Playlist | undefined {
   return playlists.find((p) => p.id === id);
@@ -404,4 +435,18 @@ export function getTracksForPlaylist(playlistId: string): Track[] {
   return playlist.trackIds
     .map((trackId) => tracks.find((t) => t.id === trackId))
     .filter((t): t is Track => Boolean(t));
+}
+
+export function getHomeSections() {
+  return homeSections;
+}
+
+export function getPlaylistsByIds(ids: string[]) {
+  return ids
+    .map((id) => playlists.find((p) => p.id === id))
+    .filter(Boolean);
+}
+
+export function getRecentlyPlayedPlaylists() {
+  return getPlaylistsByIds(recentlyPlayedPlaylistIds);
 }
