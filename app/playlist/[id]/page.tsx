@@ -1,4 +1,4 @@
-import { getPlaylistById, getTracksForPlaylist } from "@/lib/fakeDb";
+import { fetchPlaylistById, fetchTracksForPlaylist } from "@/lib/api";
 import TrackTable from "./components/TrackTable";
 
 interface PlaylistParams {
@@ -14,8 +14,9 @@ export default async function PlaylistPage({
   const { id } = await params;
 
   // Load playlist + associated tracks
-  const playlist = getPlaylistById(id);
-  const tracks = getTracksForPlaylist(id);
+  const playlist = await fetchPlaylistById(id);
+  const tracks = await fetchTracksForPlaylist(id);
+
 
   // Handle not found
   if (!playlist) {

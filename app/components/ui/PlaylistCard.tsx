@@ -1,69 +1,75 @@
-"use client"
+"use client";
+
 import { useRouter } from "next/navigation";
 
 interface PlaylistCardProps {
   image: string;
   title: string;
   subtitle?: string;
-  type: "playlist" | "album" | "artist";
+  type: "playlist" | "album" | "artist" | "mix" | "radio";
   href?: string;
-  onClick?: () => void;
+  onClick?: () => boolean | void;
 }
 
-export default function PlaylistCard({ image, title, subtitle, type, href, onClick }: PlaylistCardProps)
-{
-
+export default function PlaylistCard({
+  image,
+  title,
+  subtitle,
+  type,
+  href,
+  onClick,
+}: PlaylistCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
-
     if (onClick) {
       const result = onClick();
       if (result === false) return;
-
     }
 
     if (href) {
       router.push(href);
     }
-
-  }
-
+  };
 
   return (
-
-    //wrapper element
     <div
       onClick={handleClick}
       className="
-        flex flex-col
-        gap-2
-        w-40
+        flex flex-col gap-2 w-40
         cursor-pointer
-        rounded-md
-        hover:scale-105 hover:brightness-110
-        transition-all duration-200
-        "
+        transition-transform duration-200
+        hover:scale-105
+      "
     >
-
+      {/* IMAGE */}
       <div
         className={`
-          aspect-square
-          overflow-hidden
+          aspect-square overflow-hidden
           transition-all duration-200
-          ${type === "artist" ? "rounded-full" : "rounded-md"}`}
+          ${type === "artist" ? "rounded-full" : "rounded-md"}
+        `}
       >
         <img
           src={image}
-          className="object-cover h-full w-full transition-all duration-200" alt={title}
+          alt={title}
+          onError={(e) => {
+            e.currentTarget.src = "https://picsum.photos/600?grayscale";
+          }}
+          className="w-full h-full object-cover"
         />
       </div>
 
-      <div className="flex flex-col gap-1 w-full">
-        <p className="text-white text-base font-semibold truncate">{title}</p>
+      {/* TEXT */}
+      <div className="flex flex-col gap-1">
+        <p className="text-white text-sm font-semibold truncate">
+          {title}
+        </p>
 
         {subtitle && (
-          <p className="text-zinc-400 text-sm truncate">{subtitle}</p>
+          <p className="text-zinc-400 text-xs truncate">
+            {subtitle}
+          </p>
         )}
       </div>
     </div>
