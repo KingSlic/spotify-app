@@ -29,6 +29,7 @@ export default function Section({ section, playlists }: Props) {
           <PlaylistCard
             key={playlist.id}
             playlist={playlist}
+            variant={section.id === "recently_played" ? "compact" : "default"}
           />
         ))}
       </div>

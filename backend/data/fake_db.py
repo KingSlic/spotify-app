@@ -6,6 +6,12 @@
 
 SECTIONS = [
     {
+    "id": "recently_played",
+    "title": "Recently Played",
+    "order": 0,
+    "showAllHref": None,
+    },
+    {
         "id": "made_for_gerry",
         "title": "Made for Gerry",
         "order": 1,
@@ -31,6 +37,18 @@ SECTIONS = [
 # -----------------------------
 
 playlists = [
+    {
+      "id": "0",
+      "title": "Recently Played Mix",
+      "subtitle": "Based on your activity",
+      "type": "playlist",
+      "image": "https://picsum.photos/300?random=10",
+      "creator": "Spotify",
+      "trackIds": ["t1", "t2"],
+      "href": "/playlists/0",
+      "section": "recently_played",
+      "order": 1,
+    },
     {
         "id": "1",
         "title": "Daily Mix 1",
@@ -123,7 +141,7 @@ def get_tracks_for_playlist(pid):
     return [t for t in tracks if t["id"] in playlist["trackIds"]]
 
 
-def get_sections_with_playlists():
+def get_playlists_layout():
     response = []
 
     sorted_sections = sorted(SECTIONS, key=lambda s: s["order"])

@@ -1,27 +1,25 @@
-import { getSections, getPlaylistsBySection } from "@/lib/api"
+import { getPlaylistsLayout } from "@/lib/api"
 import Section from "./components/layout/Section"
 
 export default async function HomePage() {
-  const [sections, playlistSections] = await Promise.all([
-    getSections(),
-    getPlaylistsBySection(),
-  ])
+  // const [sections, playlistSections] = await Promise.all([
+  //   getSections(),
+  //   getPlaylistsBySection(),
+  // ])
+
+  const data = await getPlaylistsLayout()
+
+  console.log("PLAYLIST LAYOUT:", data)
 
   return (
     <main>
-      {sections.map((section) => {
-        const match = playlistSections.find(
-          (ps) => ps.id === section.id
-        )
-
-        return (
-          <Section
-            key={section.id}
-            section={section}
-            playlists={match?.playlists ?? []}
-          />
-        )
-      })}
+      {data.sections.map((section) => (
+        <Section
+          key={section.id}
+          section={section}
+          playlists={section.playlists}
+        />
+      ))}
     </main>
   )
 }

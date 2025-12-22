@@ -1,25 +1,24 @@
 "use client";
 
+import { Playlist } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 interface PlaylistCardProps {
-  image: string;
-  title: string;
-  subtitle?: string;
-  type: "playlist" | "album" | "artist" | "mix" | "radio";
-  href?: string;
+  playlist: Playlist;
+  variant?: "default" | "compact"
   onClick?: () => boolean | void;
 }
 
 export default function PlaylistCard({
-  image,
-  title,
-  subtitle,
-  type,
-  href,
+  playlist,
+  variant = "default",
   onClick,
 }: PlaylistCardProps) {
   const router = useRouter();
+
+  const { image, title, subtitle, type, href } = playlist;
+
+  const isCompact = variant === "compact"
 
   const handleClick = () => {
     if (onClick) {
@@ -35,16 +34,15 @@ export default function PlaylistCard({
   return (
     <div
       onClick={handleClick}
-      className="
+      className={`
         group
-        w-40
-        flex flex-col gap-3
+        flex flex-col
         cursor-pointer
         rounded-md
-        p-3
         transition
         hover:bg-[#1a1a1a]
-      "
+        ${isCompact ? "w-32 p-2 gap-2" : "w-40 p-3 gap-3"}
+      `}
     >
       {/* IMAGE */}
       <div
@@ -70,11 +68,15 @@ export default function PlaylistCard({
 
       {/* TEXT */}
       <div className="flex flex-col gap-1 min-w-0">
-        <p className="text-white text-sm font-semibold truncate">
+        <p className={`
+            text-white text-sm font-semibold truncate
+            ${isCompact ? "text-xs" : "text-sm"}
+          `}
+        >
           {title}
         </p>
 
-        {subtitle && (
+        {!isCompact && subtitle && (
           <p className="text-zinc-400 text-xs truncate">
             {subtitle}
           </p>

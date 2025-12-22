@@ -56,6 +56,21 @@ export async function getPlaylistsBySection(): Promise<SectionWithPlaylists[]> {
   return res.json();
 }
 
+// Mirrors the backend contract
+
+export async function getPlaylistsLayout() {
+  const res = await fetch("http://127.0.0.1:5000/api/playlists", {
+    cache: "no-store",
+  })
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch playlists layout")
+  }
+
+  return res.json()
+}
+
+
 export async function getSections(): Promise<Section[]> {
   const res = await fetch(`${API_BASE}/sections`, {
     cache: "no-store",

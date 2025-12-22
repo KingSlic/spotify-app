@@ -8,6 +8,7 @@ from data.fake_db import (
     create_playlist,
     update_playlist,
     delete_playlist,
+    get_playlists_layout,
 )
 
 playlists_bp = Blueprint("playlists", __name__, url_prefix="/api/playlists")
@@ -33,7 +34,7 @@ def get_playlists():
     This endpoint defines the UI structure.
     """
 
-    return jsonify({"sections": get_sections_with_playlists()})
+    return jsonify({"sections": get_playlists_layout()})
 
 
 # =====================================================
