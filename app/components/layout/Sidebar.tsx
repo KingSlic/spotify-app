@@ -1,24 +1,13 @@
-
 export default function Sidebar() {
   return (
-    <aside
-      style={{
-        width: "240px",
-        backgroundColor: "#111111",
-        padding: "20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "20px",
-        height: "100vh",
-      }}
-    >
-      <h2 style={{ fontSize: "18px", fontWeight: "bold" }}>Spotify</h2>
+    <aside className="w-60 bg-[#111111] p-5 flex flex-col gap-5 h-screen">
+      <h2 className="text-lg font-bold">Spotify</h2>
 
-      <nav style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        <span style={{ opacity: 0.8 }}>Home</span>
-        <span style={{ opacity: 0.8 }}>Search</span>
-        <span style={{ opacity: 0.8 }}>Your Library</span>
+      <nav className="flex flex-col gap-3">
+        <span className="opacity-80">Home</span>
+        <span className="opacity-80">Search</span>
+        <span className="opacity-80">Your Library</span>
       </nav>
     </aside>
-  );
+  )
 }

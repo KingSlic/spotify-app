@@ -2,109 +2,135 @@
 
 from flask import Blueprint, jsonify, request
 from data.fake_db import (
-    playlists,
+    get_sections_with_playlists,
     get_playlist_by_id,
     get_tracks_for_playlist,
+    create_playlist,
     update_playlist,
     delete_playlist,
-    validate_playlist_updates,
-    get_playlists_grouped_by_section,
-
 )
 
 playlists_bp = Blueprint("playlists", __name__, url_prefix="/api/playlists")
 
 
+# =====================================================
+# GET /api/playlists
+# Layout endpoint (authoritative)
+# =====================================================
+
 @playlists_bp.route("", methods=["GET"])
 def get_playlists():
-    return jsonify(get_playlists_grouped_by_section())
+
+    """
+    Returns layout-ready data owned entirely by the backend.
+
+    The frontend MUST NOT:
+    - group playlists
+    - sort playlists
+    - sort sections
+    - infer layout rules
+
+    This endpoint defines the UI structure.
+    """
+
+    return jsonify({"sections": get_sections_with_playlists()})
 
 
+# =====================================================
+# GET /api/playlists/<id>
+# Single playlist
+# =====================================================
 
 @playlists_bp.route("/<playlist_id>", methods=["GET"])
 def get_playlist(playlist_id):
     playlist = get_playlist_by_id(playlist_id)
+
     if not playlist:
         return jsonify({"error": "Playlist not found"}), 404
+
     return jsonify(playlist)
 
 
+
+# =====================================================
+# GET /api/playlists/<id>/tracks
+# Playlist tracks
+# =====================================================
+
 @playlists_bp.route("/<playlist_id>/tracks", methods=["GET"])
 def get_playlist_tracks(playlist_id):
+
+    playlist = get_playlist_by_id(playlist_id)
+
+    if not playlist:
+        return jsonify({"error": "Playlist not found"}), 404
     tracks = get_tracks_for_playlist(playlist_id)
+
     return jsonify(tracks)
 
 
-@playlists_bp.route("/api/playlists", methods=["POST"])
-def create_playlist():
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+# =====================================================
+# POST /api/playlists
+# Create playlist
+# =====================================================
 
-    title = data.get("title")
-    playlist_type = data.get("type")
+@playlists_bp.route("", methods=["POST"])
+def post_playlist():
 
-    if not title or not playlist_type:
-        return jsonify({"error": "Missing title or type"}), 400
+    """
+    Creates a playlist.
 
-    new_id = str(len(playlists) + 1)
+    All validation (required fields, section existence,
+    order conflicts) lives in fake_db.py.
+    """
 
-    playlist = {
-        "id": new_id,
-        "title": title,
-        "subtitle": data.get("subtitle", ""),
-        "type": playlist_type,
-        "image": data.get("image", "https://picsum.photos/300"),
-        "creator": data.get("creator", "You"),
-        "trackIds": [],
-    }
+    try:
+        playlist = create_playlist(request.json)
+        return jsonify(playlist), 201
 
-    playlists.append(playlist)
-
-    return (
-        jsonify({"message": "Playlist created successfully", "playlist": playlist}),
-        201,
-    )
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
 
-@playlists_bp.route("/api/playlists/<playlist_id>", methods=["PATCH"])
-def update_playlist_route(playlist_id):
+# =====================================================
+# PATCH /api/playlists/<id>
+# Partial update (including section/order changes)
+# =====================================================
 
-    data = request.get_json()
-    if not data:
-        return jsonify({"error": "No data provided"}), 400
+@playlists_bp.route("/<playlist_id>", methods=["PATCH"])
+def patch_playlist(playlist_id):
 
-    validation_error = validate_playlist_updates(data)
-    if validation_error:
-        return jsonify({"error": validation_error}), 400
+    """
+    Updates a playlist.
 
-    updated = update_playlist(playlist_id, data)
-    if not updated:
+    Supports partial updates.
+    Section/order validation is enforced centrally.
+    """
+
+    try:
+        playlist = update_playlist(playlist_id, request.json)
+        return jsonify(playlist)
+
+    except KeyError:
         return jsonify({"error": "Playlist not found"}), 404
 
-    return jsonify(updated), 200
+    except ValueError as e:
+        return jsonify({"error": str(e)}), 400
 
 
-@playlists_bp.route("/api/playlists/<playlist_id>/reorder", methods=["PATCH"])
-def reorder_playlist_route(playlist_id):
-    data = request.get_json()
-    if not data or "order" not in data:
-        return jsonify({"error": "New order is required"}), 400
 
-    updated, error = reorder_playlist(playlist_id, data["order"])
-    if error:
-        return jsonify({"error": error}), 400
+# =====================================================
+# DELETE /api/playlists/<id>
+# =====================================================
 
-    return jsonify(updated), 200
+@playlists_bp.route("/<playlist_id>", methods=["DELETE"])
+def remove_playlist(playlist_id):
+    try:
+        delete_playlist(playlist_id)
+        return "", 204
 
-
-@playlists_bp.route("/api/playlists/<playlist_id>", methods=["DELETE"])
-def delete_playlist_route(playlist_id):
-    deleted = delete_playlist(playlist_id)
-    if not deleted:
+    except KeyError:
         return jsonify({"error": "Playlist not found"}), 404
-
-    return jsonify({"message": "Playlist deleted successfully"}), 200
 
 
 # explain intent-based routes, their functionality and use cases

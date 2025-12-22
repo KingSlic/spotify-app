@@ -36,10 +36,14 @@ export default function PlaylistCard({
     <div
       onClick={handleClick}
       className="
-        flex flex-col gap-2 w-40
+        group
+        w-40
+        flex flex-col gap-3
         cursor-pointer
-        transition-transform duration-200
-        hover:scale-105
+        rounded-md
+        p-3
+        transition
+        hover:bg-[#1a1a1a]
       "
     >
       {/* IMAGE */}
@@ -56,12 +60,16 @@ export default function PlaylistCard({
           onError={(e) => {
             e.currentTarget.src = "https://picsum.photos/600?grayscale";
           }}
-          className="w-full h-full object-cover"
+          className="
+            w-full h-full object-cover
+            transition-transform duration-200
+            group-hover:scale-105
+          "
         />
       </div>
 
       {/* TEXT */}
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-1 min-w-0">
         <p className="text-white text-sm font-semibold truncate">
           {title}
         </p>

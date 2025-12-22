@@ -7,6 +7,7 @@ from data.fake_db import (
     tracks,
     get_playlist_by_id,
     get_tracks_for_playlist,
+    get_sections_with_playlists
 )
 
 
@@ -25,6 +26,8 @@ def create_app():
 
     @app.route("/api/playlists", methods=["GET"])
     def get_playlists():
+        playlists = get_sections_with_playlists()
+          
         return jsonify(playlists)
 
     @app.route("/api/playlists/<string:id>", methods=["GET"])

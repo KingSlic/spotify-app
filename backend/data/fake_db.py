@@ -1,5 +1,35 @@
 # backend/data/fake_db.py
 
+# -----------------------------
+# Section Data (Authoritative)
+# -----------------------------
+
+SECTIONS = [
+    {
+        "id": "made_for_gerry",
+        "title": "Made for Gerry",
+        "order": 1,
+        "showAllHref": "/sections/made_for_gerry",
+    },
+    {
+        "id": "your_weekly_vibe",
+        "title": "Your Weekly Vibe",
+        "order": 2,
+        "showAllHref": None,
+    },
+    {
+        "id": "chill_mode_engaged",
+        "title": "Chill Mode Engaged",
+        "order": 3,
+        "showAllHref": None,
+    },
+]
+
+
+# -----------------------------
+# Playlist Data
+# -----------------------------
+
 playlists = [
     {
         "id": "1",
@@ -9,6 +39,7 @@ playlists = [
         "image": "https://picsum.photos/300?random=1",
         "creator": "Spotify",
         "trackIds": ["t1", "t2", "t3"],
+        "href": "/playlists/1",
         "section": "made_for_gerry",
         "order": 1,
     },
@@ -20,8 +51,9 @@ playlists = [
         "image": "https://picsum.photos/300?random=2",
         "creator": "Spotify",
         "trackIds": ["t3", "t4"],
+        "href": "/playlists/2",
         "section": "your_weekly_vibe",
-        "order": 2,
+        "order": 1,
     },
     {
         "id": "3",
@@ -31,39 +63,16 @@ playlists = [
         "image": "https://picsum.photos/300?random=3",
         "creator": "Spotify",
         "trackIds": ["t1", "t4"],
+        "href": "/playlists/3",
         "section": "chill_mode_engaged",
-        "order": 3,
+        "order": 1,
     },
 ]
 
 
-SECTIONS = {
-    "good_evening": {
-        "id": "good_evening",
-        "title": "Good evening",
-        "order": 1,
-        "showAllHref": None,
-    },
-    "made_for_you": {
-        "id": "made_for_you",
-        "title": "Made for you",
-        "order": 2,
-        "showAllHref": "/section/made-for-you",
-    },
-    "recently_played": {
-        "id": "recently_played",
-        "title": "Recently played",
-        "order": 3,
-        "showAllHref": None,
-    },
-}
-
-
-SECTION_ORDER = {
-    "made_for_gerry": 1,
-    "your_weekly_vibe": 2,
-    "chill_mode_engaged": 3,
-}
+# -----------------------------
+# Track Data
+# -----------------------------
 
 tracks = [
     {
@@ -97,6 +106,11 @@ tracks = [
 ]
 
 
+# =====================================================
+# Read Helpers
+# =====================================================
+
+
 def get_playlist_by_id(pid):
     return next((p for p in playlists if p["id"] == pid), None)
 
@@ -109,128 +123,116 @@ def get_tracks_for_playlist(pid):
     return [t for t in tracks if t["id"] in playlist["trackIds"]]
 
 
-def get_playlists_grouped_by_section():
-    grouped = {}
-
-    for playlist in playlists:
-        section_key = playlist["section"]
-        grouped.setdefault(section_key, []).append(playlist)
-
-    for section_playlists in grouped.values():
-        section_playlists.sort(key=lambda p: p["order"])
-
-    ordered_sections = sorted(
-        SECTIONS.values(),
-        key=lambda s: s["order"],
-    )
-
+def get_sections_with_playlists():
     response = []
 
-    for section in ordered_sections:
-        section_playlists = grouped.get(section["id"], [])
-        if not section_playlists:
-            continue
+    sorted_sections = sorted(SECTIONS, key=lambda s: s["order"])
 
-        response.append({**section, "playlists": section_playlists})
+    for section in sorted_sections:
+        section_playlists = [p for p in playlists if p["section"] == section["id"]]
+        section_playlists.sort(key=lambda p: p["order"])
+
+        response.append(
+            {
+                **section,
+                "playlists": section_playlists,
+            }
+        )
 
     return response
 
 
 def get_sections():
-    return sorted(
-        SECTIONS.values(),
-        key=lambda section: section["order"],
-    )
+    return sorted(SECTIONS, key=lambda s: s["order"])
 
 
-def is_valid_section(section_id):
-    return section_id in SECTIONS
+# =====================================================
+# Validation Helpers
+# =====================================================
+
+
+def section_exists(section_id):
+    return any(s["id"] == section_id for s in SECTIONS)
+
+
+def get_playlists_in_section(section_id):
+    return [p for p in playlists if p["section"] == section_id]
 
 
 def validate_new_playlist(data):
-    required_fields = {"title", "subtitle", "image", "section", "order"}
+    required_fields = {
+        "id",
+        "title",
+        "image",
+        "type",
+        "section",
+        "order",
+    }
 
     if not isinstance(data, dict):
-        return "Invalid payload format"
+        raise ValueError("Invalid payload format")
 
     missing = required_fields - data.keys()
     if missing:
-        return f"Missing required fields: {', '.join(missing)}"
+        raise ValueError(f"Missing required fields: {', '.join(missing)}")
+
+    if not section_exists(data["section"]):
+        raise ValueError(f"Invalid section: {data['section']}")
 
     if not isinstance(data["order"], int) or data["order"] < 1:
-        return "Order must be a positive integer"
+        raise ValueError("Order must be a positive integer")
 
-    if not is_valid_section(data["section"]):
-        return f"Invalid section: {data['section']}"
+    section_playlists = get_playlists_in_section(data["section"])
+    if any(p["order"] == data["order"] for p in section_playlists):
+        raise ValueError("Duplicate order in section")
 
-    return None
+
+def validate_playlist_update(existing, updates):
+    if not isinstance(updates, dict) or not updates:
+        raise ValueError("Invalid update payload")
+
+    if "section" in updates:
+        if not section_exists(updates["section"]):
+            raise ValueError("Invalid section")
+
+    new_section = updates.get("section", existing["section"])
+    new_order = updates.get("order", existing["order"])
+
+    if "order" in updates:
+        if not isinstance(new_order, int) or new_order < 1:
+            raise ValueError("Order must be a positive integer")
+
+    section_playlists = get_playlists_in_section(new_section)
+    for p in section_playlists:
+        if p["id"] != existing["id"] and p["order"] == new_order:
+            raise ValueError("Duplicate order in section")
+
+
+# =====================================================
+# CRUD Mutators
+# =====================================================
+
+
+def create_playlist(data):
+    validate_new_playlist(data)
+    playlists.append(data)
+    return data
 
 
 def update_playlist(playlist_id, updates):
-    playlist = next((p for p in playlists if p["id"] == playlist_id), None)
+    playlist = get_playlist_by_id(playlist_id)
     if not playlist:
-        return None
+        raise KeyError("Playlist not found")
 
-    allowed_fields = {"title", "subtitle", "image", "href"}
-    for key, value in updates.items():
-        if key in allowed_fields:
-            playlist[key] = value
+    validate_playlist_update(playlist, updates)
+    playlist.update(updates)
     return playlist
-
-
-def validate_playlist_updates(data):
-    if not isinstance(data, dict):
-        return "Invalid payload format"
-    allowed_fields = {
-        "title": str,
-        "subtitle": str,
-        "image": str,
-        "href": (str, type(None)),
-    }
-    if not data:
-        return "At least one field must be provided for update"
-
-    for key, value in data.items():
-        if key not in allowed_fields:
-            return f"Invalid field: {key} is not allowed"
-
-        expected_type = allowed_fields[key]
-
-        if not isinstance(value, expected_type):
-            return f"Field '{key}' must be of type {expected_type}"
-
-        if isinstance(value, str) and not value.strip():
-            return f"Field '{key}' cannot be empty"
-
-    return None
-
-
-def reorder_playlist(playlist_id, new_order):
-    playlist = next((p for p in playlists if p["id"] == playlist_id), None)
-    if not playlist:
-        return None, "Playlist not found"
-
-    if not isinstance(new_order, int) or new_order < 1:
-        return None, "Order must be a positive integer"
-
-    section = playlist["section"]
-
-    # get all playlists in the same section, excluding this one
-    section_playlists = [
-        p for p in playlists if p["section"] == section and p["id"] != playlist_id
-    ]
-
-    # shift other playlists to make room for the new order
-    for p in section_playlists:
-        if p["order"] >= new_order:
-            p["order"] += 1
-
-    playlist["order"] = new_order
-    return playlist, None
 
 
 def delete_playlist(playlist_id):
     global playlists
-    initial_len = len(playlists)
+    playlist = get_playlist_by_id(playlist_id)
+    if not playlist:
+        raise KeyError("Playlist not found")
+
     playlists = [p for p in playlists if p["id"] != playlist_id]
-    return len(playlists) < initial_len
