@@ -7,7 +7,17 @@ type Props = {
 }
 
 export default function Section({ section, playlists }: Props) {
-  if (playlists.length === 0) return null
+
+  if (playlists.length === 0) {
+    return (
+      <section>
+        <h2 className="text-xl font-bold">{section.title}</h2>
+        <p className="text-sm text-neutral-500 mt-2">
+          Nothing here yet.
+        </p>
+      </section>
+    )
+  }
 
   return (
     <section>

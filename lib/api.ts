@@ -8,7 +8,7 @@ export async function fetchPlaylists() {
   return res.json();
 }
 
-export async function fetchPlaylistById(id: string) {
+export async function fetchById(id: string) {
   const res = await fetch(`${API_BASE}/playlists/${id}`, {
     cache: "no-store",
   });
