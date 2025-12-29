@@ -107,5 +107,5 @@ export async function deletePlaylist(id: string) {
   });
 
   if (!res.ok) throw new Error("Failed to delete playlist");
-  return res.json();
+
 }

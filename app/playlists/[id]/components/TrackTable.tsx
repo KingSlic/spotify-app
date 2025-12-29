@@ -14,6 +14,23 @@ interface Track {
 export default function TrackTable({ tracks }: { tracks: Track[] }) {
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
 
+  const [includedTrackIds, setIncludedTrackIds] = useState<Set<string>>(
+    new Set(tracks.map((t) => t.id))
+  );
+
+
+  function toggleTrack(trackId: string) {
+    setIncludedTrackIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(trackId)) {
+        next.delete(trackId);
+      } else {
+        next.add(trackId);
+      }
+      return next;
+    })
+  }
+
   return (
     <div className="w-full">
 
@@ -33,6 +50,8 @@ export default function TrackTable({ tracks }: { tracks: Track[] }) {
             track={track}
             index={index}
             active={track.id === activeTrackId}
+            isIncluded={includedTrackIds.has(track.id)}
+            onToggleInclude={() => toggleTrack(track.id)}
             onPlay={() => setActiveTrackId(track.id)}
           />
         ))}

@@ -2,7 +2,6 @@
 
 from flask import Blueprint, jsonify, request
 from data.fake_db import (
-    get_sections_with_playlists,
     get_playlist_by_id,
     get_tracks_for_playlist,
     create_playlist,
@@ -19,9 +18,9 @@ playlists_bp = Blueprint("playlists", __name__, url_prefix="/api/playlists")
 # Layout endpoint (authoritative)
 # =====================================================
 
+
 @playlists_bp.route("", methods=["GET"])
 def get_playlists():
-
     """
     Returns layout-ready data owned entirely by the backend.
 
@@ -42,6 +41,7 @@ def get_playlists():
 # Single playlist
 # =====================================================
 
+
 @playlists_bp.route("/<playlist_id>", methods=["GET"])
 def get_playlist(playlist_id):
     playlist = get_playlist_by_id(playlist_id)
@@ -52,11 +52,11 @@ def get_playlist(playlist_id):
     return jsonify(playlist)
 
 
-
 # =====================================================
 # GET /api/playlists/<id>/tracks
 # Playlist tracks
 # =====================================================
+
 
 @playlists_bp.route("/<playlist_id>/tracks", methods=["GET"])
 def get_playlist_tracks(playlist_id):
@@ -75,9 +75,9 @@ def get_playlist_tracks(playlist_id):
 # Create playlist
 # =====================================================
 
+
 @playlists_bp.route("", methods=["POST"])
 def post_playlist():
-
     """
     Creates a playlist.
 
@@ -98,9 +98,9 @@ def post_playlist():
 # Partial update (including section/order changes)
 # =====================================================
 
+
 @playlists_bp.route("/<playlist_id>", methods=["PATCH"])
 def patch_playlist(playlist_id):
-
     """
     Updates a playlist.
 
@@ -119,13 +119,20 @@ def patch_playlist(playlist_id):
         return jsonify({"error": str(e)}), 400
 
 
-
 # =====================================================
 # DELETE /api/playlists/<id>
 # =====================================================
 
+
 @playlists_bp.route("/<playlist_id>", methods=["DELETE"])
 def remove_playlist(playlist_id):
+    """
+    Hard-deletes a playlist.
+
+    - Returns 204 on success
+    - Does not return a body
+    - Does not cascade to tracks or history
+    """
     try:
         delete_playlist(playlist_id)
         return "", 204

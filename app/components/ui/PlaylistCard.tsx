@@ -1,11 +1,11 @@
 "use client";
 
-import { Playlist } from "@/lib/api";
+import { Playlist, deletePlaylist } from "@/lib/api";
 import { useRouter } from "next/navigation";
 
 interface PlaylistCardProps {
   playlist: Playlist;
-  variant?: "default" | "compact"
+  variant?: "default" | "compact";
   onClick?: () => boolean | void;
 }
 
@@ -17,8 +17,18 @@ export default function PlaylistCard({
   const router = useRouter();
 
   const { image, title, subtitle, type, href } = playlist;
+  const isCompact = variant === "compact";
 
-  const isCompact = variant === "compact"
+  async function handleDelete(e: React.MouseEvent) {
+    e.stopPropagation(); // prevent card click navigation
+
+    try {
+      await deletePlaylist(playlist.id);
+      router.refresh();
+    } catch (err) {
+      console.error("Failed to delete playlist", err);
+    }
+  }
 
   const handleClick = () => {
     if (onClick) {
@@ -68,8 +78,9 @@ export default function PlaylistCard({
 
       {/* TEXT */}
       <div className="flex flex-col gap-1 min-w-0">
-        <p className={`
-            text-white text-sm font-semibold truncate
+        <p
+          className={`
+            text-white font-semibold truncate
             ${isCompact ? "text-xs" : "text-sm"}
           `}
         >
@@ -82,6 +93,22 @@ export default function PlaylistCard({
           </p>
         )}
       </div>
+
+      {/* DELETE (minimal, intentional) */}
+      {!isCompact && (
+        <button
+          onClick={handleDelete}
+          className="
+            mt-1 self-start
+            text-xs text-red-400
+            opacity-0 group-hover:opacity-100
+            transition
+            hover:text-red-300
+          "
+        >
+          Delete
+        </button>
+      )}
     </div>
   );
 }

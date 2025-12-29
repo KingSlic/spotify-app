@@ -6,10 +6,10 @@
 
 SECTIONS = [
     {
-    "id": "recently_played",
-    "title": "Recently Played",
-    "order": 0,
-    "showAllHref": None,
+        "id": "recently_played",
+        "title": "Recently Played",
+        "order": 0,
+        "showAllHref": None,
     },
     {
         "id": "made_for_gerry",
@@ -38,16 +38,16 @@ SECTIONS = [
 
 playlists = [
     {
-      "id": "0",
-      "title": "Recently Played Mix",
-      "subtitle": "Based on your activity",
-      "type": "playlist",
-      "image": "https://picsum.photos/300?random=10",
-      "creator": "Spotify",
-      "trackIds": ["t1", "t2"],
-      "href": "/playlists/0",
-      "section": "recently_played",
-      "order": 1,
+        "id": "0",
+        "title": "Recently Played Mix",
+        "subtitle": "Based on your activity",
+        "type": "playlist",
+        "image": "https://picsum.photos/300?random=10",
+        "creator": "Spotify",
+        "trackIds": ["t1", "t2"],
+        "href": "/playlists/0",
+        "section": "recently_played",
+        "order": 1,
     },
     {
         "id": "1",
@@ -178,31 +178,12 @@ def get_playlists_in_section(section_id):
 
 
 def validate_new_playlist(data):
-    required_fields = {
-        "id",
-        "title",
-        "image",
-        "type",
-        "section",
-        "order",
-    }
 
     if not isinstance(data, dict):
         raise ValueError("Invalid payload format")
 
-    missing = required_fields - data.keys()
-    if missing:
-        raise ValueError(f"Missing required fields: {', '.join(missing)}")
-
-    if not section_exists(data["section"]):
-        raise ValueError(f"Invalid section: {data['section']}")
-
-    if not isinstance(data["order"], int) or data["order"] < 1:
-        raise ValueError("Order must be a positive integer")
-
-    section_playlists = get_playlists_in_section(data["section"])
-    if any(p["order"] == data["order"] for p in section_playlists):
-        raise ValueError("Duplicate order in section")
+    if "title" not in data or not data["title"].strip():
+        raise ValueError("Title is required")
 
 
 def validate_playlist_update(existing, updates):
@@ -233,12 +214,49 @@ def validate_playlist_update(existing, updates):
 
 def create_playlist(data):
     validate_new_playlist(data)
-    playlists.append(data)
-    return data
+
+    playlist_id = generate_id()
+
+    """
+    Creates a new empty playlist.
+
+    Server-owned:
+    - id
+    - section
+    - order
+    - trackIds
+
+    Client supplies:
+    - title
+    - optional subtitle/image
+    """
+
+    new_playlist = {
+        "id": playlist_id(),  # simple increment or uuid
+        "title": data["title"],
+        "subtitle": data.get("subtitle", None),
+        "type": "playlist",
+        "image": data.get("image", default_image()),
+        "creator": "You",
+        "trackIds": [],
+        "section": "made_for_gerry",  # default section
+        "order": next_order("made_for_gerry"),
+        "href": f"/playlists/{playlist_id}",
+    }
+
+    playlists.append(new_playlist)
+    return new_playlist
 
 
 def update_playlist(playlist_id, updates):
     playlist = get_playlist_by_id(playlist_id)
+
+    if "id" in updates:
+        raise ValueError("Cannot update playlist id")
+
+    if "trackIds" in updates:
+        raise ValueError("Track mutation not supported yet")
+
     if not playlist:
         raise KeyError("Playlist not found")
 
