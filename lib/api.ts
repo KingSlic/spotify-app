@@ -32,18 +32,30 @@ export type Section = {
 };
 
 export type Playlist = {
-  id: string
+  id: string;
   title: string;
   subtitle: string;
   image: string;
   href?: string | null;
-  order: number
-  section: string
-}
+  order: number;
+  section: string;
+};
 
 export type SectionWithPlaylists = {
-  id: string
-  playlists: Playlist[]
+  id: string;
+  playlists: Playlist[];
+};
+
+export async function fetchAllTracks() {
+  const res = await fetch(`${API_BASE}/tracks`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch all tracks");
+  }
+
+  return res.json();
 }
 
 export async function getPlaylistsBySection(): Promise<SectionWithPlaylists[]> {
@@ -61,15 +73,14 @@ export async function getPlaylistsBySection(): Promise<SectionWithPlaylists[]> {
 export async function getPlaylistsLayout() {
   const res = await fetch("http://127.0.0.1:5000/api/playlists", {
     cache: "no-store",
-  })
+  });
 
   if (!res.ok) {
-    throw new Error("Failed to fetch playlists layout")
+    throw new Error("Failed to fetch playlists layout");
   }
 
-  return res.json()
+  return res.json();
 }
-
 
 export async function getSections(): Promise<Section[]> {
   const res = await fetch(`${API_BASE}/sections`, {
@@ -90,7 +101,6 @@ export async function updatePlaylist(
     href?: string;
   }>
 ) {
-
   const res = await fetch(`${API_BASE}/playlists/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
@@ -107,5 +117,22 @@ export async function deletePlaylist(id: string) {
   });
 
   if (!res.ok) throw new Error("Failed to delete playlist");
+}
 
+export async function toggleTrackInPlaylist(
+  playlistId: string,
+  trackId: string,
+  action: "add" | "remove"
+) {
+  const res = await fetch(`${API_BASE}/playlists/${playlistId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trackId, action }),
+  });
+
+  if (!res.ok) {
+    throw new Error("Failed to update playlist tracks");
+  }
+
+  return res.json();
 }

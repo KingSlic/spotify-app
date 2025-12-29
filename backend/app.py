@@ -2,6 +2,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from routes.playlists import playlists_bp
 from routes.sections import sections_bp
+from routes.tracks import tracks_bp
 
 
 def create_app():
@@ -12,6 +13,7 @@ def create_app():
 
     app.register_blueprint(playlists_bp)
     app.register_blueprint(sections_bp)
+    app.register_blueprint(tracks_bp)
 
     @app.route("/api/health", methods=["GET"])
     def health_check():

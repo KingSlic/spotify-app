@@ -1,4 +1,5 @@
 import { fetchById, fetchTracksForPlaylist } from "@/lib/api";
+import { fetchAllTracks } from "@/lib/api";
 import TrackTable from "./components/TrackTable";
 
 interface PlaylistParams {
@@ -15,7 +16,7 @@ export default async function PlaylistPage({
 
   // Load playlist + associated tracks
   const playlist = await fetchById(id);
-  const tracks = await fetchTracksForPlaylist(id);
+  const tracks = await fetchAllTracks();
 
 
   // Handle not found
@@ -81,7 +82,10 @@ export default async function PlaylistPage({
       </div>
 
       {/* TRACK LIST */}
-      <TrackTable tracks={tracks} />
+      <TrackTable
+        tracks={tracks}
+        playlistId={id}
+        includedTrackIds={playlist.trackIds} />
 
     </div>
   );

@@ -232,7 +232,7 @@ def create_playlist(data):
     """
 
     new_playlist = {
-        "id": playlist_id(),  # simple increment or uuid
+        "id": playlist_id,  # simple increment or uuid
         "title": data["title"],
         "subtitle": data.get("subtitle", None),
         "type": "playlist",
@@ -250,19 +250,32 @@ def create_playlist(data):
 
 def update_playlist(playlist_id, updates):
     playlist = get_playlist_by_id(playlist_id)
-
-    if "id" in updates:
-        raise ValueError("Cannot update playlist id")
-
-    if "trackIds" in updates:
-        raise ValueError("Track mutation not supported yet")
-
     if not playlist:
         raise KeyError("Playlist not found")
 
+    # Track add/remove (explicit mutation)
+    if "trackId" in updates and "action" in updates:
+        track_id = updates["trackId"]
+        action = updates["action"]
+
+        if action == "add":
+            if track_id not in playlist["trackIds"]:
+                playlist["trackIds"].append(track_id)
+
+        elif action == "remove":
+            if track_id in playlist["trackIds"]:
+                playlist["trackIds"].remove(track_id)
+
+        else:
+            raise ValueError("Invalid action")
+
+        return playlist
+
+    # Fallback: metadata updates
     validate_playlist_update(playlist, updates)
     playlist.update(updates)
     return playlist
+
 
 
 def delete_playlist(playlist_id):
