@@ -79,7 +79,9 @@ export async function getPlaylistsLayout() {
     throw new Error("Failed to fetch playlists layout");
   }
 
-  return res.json();
+  const data = await res.json();
+  return data.sections;
+  
 }
 
 export async function getSections(): Promise<Section[]> {

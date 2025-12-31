@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import TrackRow from "./TrackRow";
-import { toggleTrackInPlaylist } from "@/lib/api";
 
 interface Track {
   id: string;
@@ -14,62 +13,37 @@ interface Track {
 
 export default function TrackTable({
   tracks,
-  playlistId,
-  includedTrackIds,
+  included,
+  selected,
+  onToggleTrack,
+  onToggleSelect,
 }: {
   tracks: Track[];
-  playlistId: string;
-  includedTrackIds: string[];
+  included: Set<string>;
+  selected: Set<string>;
+  onToggleTrack: (id: string) => void;
+  onToggleSelect: (id: string) => void;
 }) {
   const [activeTrackId, setActiveTrackId] = useState<string | null>(null);
 
-  // Local UI truth
-  const [included, setIncluded] = useState<Set<string>>(
-    () => new Set(includedTrackIds)
-  );
-
-  // Sync when playlist changes
-  useEffect(() => {
-    setIncluded(new Set(includedTrackIds));
-  }, [includedTrackIds]);
-
-  function toggleTrack(trackId: string) {
-    const isCurrentlyIncluded = included.has(trackId);
-
-    // Optimistic UI update
-    setIncluded((prev) => {
-      const next = new Set(prev);
-      isCurrentlyIncluded ? next.delete(trackId) : next.add(trackId);
-      return next;
-    });
-
-    // Persist to backend
-    toggleTrackInPlaylist(
-      playlistId,
-      trackId,
-      isCurrentlyIncluded ? "remove" : "add"
-    ).then((updatedPlaylist) => {
-      setIncluded(new Set(updatedPlaylist.trackIds));
-    })
-
-    .catch(() => {
-      // Rollback on failure
-      setIncluded((prev) => {
-        const next = new Set(prev);
-        isCurrentlyIncluded ? next.add(trackId) : next.delete(trackId);
-        return next;
-      });
-    });
-  }
 
   return (
     <div className="w-full">
       {/* TABLE HEADER */}
-      <div className="grid grid-cols-[40px_1fr_1fr_60px] px-4 py-2 border-b border-zinc-800 text-sm text-zinc-400">
+      <div
+        className="
+            grid grid-cols-[32px_40px_2fr_2fr_24px_56px]
+            px-4 py-2
+            border-b border-zinc-800
+            text-sm text-zinc-400
+            items-center"
+      >
+        <span className="w-4 h-4 border border-zinc-700 rounded-[2px]" />
         <span>#</span>
         <span>Title</span>
         <span>Album</span>
-        <span className="text-right">⏱</span>
+        <span />
+        <span className="flex justify-end">⏱</span>
       </div>
 
       {/* TRACK ROWS */}
@@ -81,8 +55,10 @@ export default function TrackTable({
             index={index}
             active={track.id === activeTrackId}
             isIncluded={included.has(track.id)}
-            onToggleInclude={() => toggleTrack(track.id)}
+            onToggleInclude={() => onToggleTrack(track.id)}
             onPlay={() => setActiveTrackId(track.id)}
+            isSelected={selected.has(track.id)}
+            onToggleSelect={() => onToggleSelect(track.id)}
           />
         ))}
       </div>

@@ -1,13 +1,14 @@
 import { fetchById, fetchTracksForPlaylist } from "@/lib/api";
-import { fetchAllTracks } from "@/lib/api";
-import TrackTable from "./components/TrackTable";
+import PlaylistClient from "./PlaylistClient";
+
+
 
 interface PlaylistParams {
   id: string;
 }
 
 export default async function PlaylistPage({
-  params,
+  params
 }: {
   params: Promise<PlaylistParams>;
 }) {
@@ -16,7 +17,7 @@ export default async function PlaylistPage({
 
   // Load playlist + associated tracks
   const playlist = await fetchById(id);
-  const tracks = await fetchAllTracks();
+  const tracks = await fetchTracksForPlaylist(id);
 
 
   // Handle not found
@@ -66,26 +67,13 @@ export default async function PlaylistPage({
         </div>
       </div>
 
-      {/* CONTROLS */}
-      <div className="flex items-center gap-6 mb-8">
-        <button className="bg-[#1DB954] hover:bg-[#1ed760] text-black rounded-full w-14 h-14 flex items-center justify-center shadow-lg">
-          ▶
-        </button>
 
-        <button className="text-3xl hover:text-white text-zinc-400 transition">
-          ❤️
-        </button>
 
-        <button className="text-3xl hover:text-white text-zinc-400 transition">
-          ⋯
-        </button>
-      </div>
-
-      {/* TRACK LIST */}
-      <TrackTable
+      <PlaylistClient
+        mode="view"
+        playlist={playlist}
         tracks={tracks}
-        playlistId={id}
-        includedTrackIds={playlist.trackIds} />
+      />
 
     </div>
   );
