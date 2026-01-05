@@ -16,8 +16,9 @@ interface TrackRowProps {
   active?: boolean;
   isIncluded: boolean;
   isSelected: boolean;
-  onToggleInclude: () => void;
-  onToggleSelect: () => void;
+  mode: "view" | "manage";
+  onToggleInclude?: () => void;
+  onToggleSelect?: () => void;
   onPlay?: () => void;
 }
 
@@ -64,11 +65,14 @@ export default function TrackRow({
   active = false,
   isIncluded,
   isSelected,
+  mode,
   onToggleInclude,
   onToggleSelect,
   onPlay,
 }: TrackRowProps) {
   const [hover, setHover] = useState(false);
+
+  const isManage = mode === "manage";
 
   return (
     <div
@@ -85,60 +89,55 @@ export default function TrackRow({
         items-center
       "
     >
-      {/* SELECT BOX (Spotify-style) */}
-      <button
-        // disabled={isMutating}
-        onClick={(e) => {
-          e.stopPropagation();
-          onToggleSelect();
-        }}
-        className={`
-    w-4 h-4
-    border
-    rounded-[2px]
-    flex items-center justify-center
-    transition-colors
-    ${
-      isSelected
-        ? "bg-[#1DB954] border-[#1DB954]"
-        : "border-zinc-500 hover:border-white"
-    }
-  `}
-      >
-        {isSelected && (
-          <svg viewBox="0 0 16 16" className="w-3 h-3">
-            <path
-              d="M3.5 8.5l3 3 6-6"
-              fill="none"
-              stroke="black"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        )}
-      </button>
+      {/* SELECT BOX (manage-only) */}
+      {isManage ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect?.();
+          }}
+          className={`
+            w-4 h-4
+            border
+            rounded-[2px]
+            flex items-center justify-center
+            transition-colors
+            ${
+              isSelected
+                ? "bg-[#1DB954] border-[#1DB954]"
+                : "border-zinc-500 hover:border-white"
+            }
+          `}
+        >
+          {isSelected && (
+            <svg viewBox="0 0 16 16" className="w-3 h-3">
+              <path
+                d="M3.5 8.5l3 3 6-6"
+                fill="none"
+                stroke="black"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          )}
+        </button>
+      ) : (
+        <span />
+      )}
 
       {/* INDEX / PLAY ICON */}
       <span
-        className={`flex items-center justify-start w-4
-        ${active ? "text-[#1DB954]" : "text-zinc-400"}
-      `}
+        className={`flex items-center justify-start w-4 ${
+          active ? "text-[#1DB954]" : "text-zinc-400"
+        }`}
       >
-        {hover ? (
-          <span className="text-white">▶</span>
-        ) : active ? (
-          "🔊"
-        ) : (
-          index + 1
-        )}
+        {hover ? <span className="text-white">▶</span> : active ? "🔊" : index + 1}
       </span>
 
       {/* TITLE + ARTIST */}
       <div className="flex flex-col truncate min-w-0">
-        <span
-          className={`font-medium truncate ${active ? "text-[#1DB954]" : "text-white"}`}
-        >
+        <span className={`font-medium truncate ${active ? "text-[#1DB954]" : "text-white"}`}>
           {track.title}
         </span>
         <span className="text-sm text-zinc-400 truncate">
@@ -149,16 +148,21 @@ export default function TrackRow({
       {/* ALBUM */}
       <span className="text-sm text-zinc-400 truncate">{track.album}</span>
 
-      {/* ADD / REMOVE TOGGLE */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation(); // critical
-          onToggleInclude();
-        }}
-        className="flex items-center justify-start text-zinc-400 hover:text-white"
-      >
-        {isIncluded ? <CheckIcon /> : <PlusIcon />}
-      </button>
+      {/* ADD / REMOVE TOGGLE (manage-only) */}
+      {isManage ? (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleInclude?.();
+          }}
+          className="flex items-center justify-start text-zinc-400 hover:text-white"
+          aria-label={isIncluded ? "Remove from playlist" : "Add to playlist"}
+        >
+          {isIncluded ? <CheckIcon /> : <PlusIcon />}
+        </button>
+      ) : (
+        <span />
+      )}
 
       {/* DURATION */}
       <span className="text-sm text-zinc-400 text-right whitespace-nowrap">

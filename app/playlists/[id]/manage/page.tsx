@@ -1,7 +1,7 @@
 // app/playlists/[id]/manage/page.tsx
 
 import {
-  fetchPlaylistById,
+  fetchById,
   fetchAllTracks,
   fetchPlaylistTracksWithMeta,
 } from "@/lib/api";
@@ -14,12 +14,12 @@ interface PlaylistParams {
 export default async function ManagePlaylistPage({
   params,
 }: {
-  params: PlaylistParams;
+  params: Promise<PlaylistParams>;
 }) {
-  const { id } = params;
+  const { id } = await params;
 
   // Authoritative data
-  const playlist = await fetchPlaylistById(id);
+  const playlist = await fetchById(id);
   const tracks = await fetchAllTracks();
   const playlistTracks = await fetchPlaylistTracksWithMeta(id);
 
@@ -50,6 +50,7 @@ export default async function ManagePlaylistPage({
         tracks={tracks}
         playlist={playlist}
         playlistTracks={playlistTracks}
+        mode="manage"
       />
     </div>
   );

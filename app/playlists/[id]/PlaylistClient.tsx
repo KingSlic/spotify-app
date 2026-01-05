@@ -8,7 +8,7 @@ import {
 import { toggleTrackInPlaylist } from "@/lib/api";
 import { rankTracksWithReasons } from "@/lib/recommendations/playlist";
 import { useEffect, useMemo, useState } from "react";
-
+import ReadOnlyTrackList from "./components/ReadOnlyTrackList";
 import TrackTable from "./components/TrackTable";
 
 /* ===========================
@@ -106,8 +106,11 @@ export default function PlaylistClient({
      CLIENT-ONLY EXPLORATION
      =========================== */
 
-  const [recommendations, setRecommendations] =
-    useState<Recommendation[]>(baseRecommendations);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+
+  useEffect(() => {
+    setRecommendations(baseRecommendations);
+  }, [baseRecommendations]);
 
   useEffect(() => {
     setRecommendations(
@@ -166,6 +169,14 @@ export default function PlaylistClient({
     } catch {
       setIncluded(prev);
     }
+  }
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
   }
 
   /* ===========================
@@ -232,6 +243,9 @@ export default function PlaylistClient({
         </div>
       )}
 
+      {/* 🔹 Read-Only Track List */}
+      {mode === "view" && <ReadOnlyTrackList playlistTracks={playlistTracks} />}
+
       {/* 🔹 Manage-Only Table */}
       {mode === "manage" && tracks && (
         <TrackTable
@@ -239,13 +253,8 @@ export default function PlaylistClient({
           selected={selected}
           included={included}
           onToggleTrack={toggleInclude}
-          onToggleSelect={(id) =>
-            setSelected((prev) => {
-              const next = new Set(prev);
-              next.has(id) ? next.delete(id) : next.add(id);
-              return next;
-            })
-          }
+          onToggleSelect={toggleSelect}
+          mode="manage"
         />
       )}
     </div>

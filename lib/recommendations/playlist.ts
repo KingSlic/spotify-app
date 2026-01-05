@@ -1,9 +1,5 @@
 import { getRecencyWeight } from "../analytics/playlist";
 
-/* ===========================
-   TYPES
-   =========================== */
-
 export interface Recommendation {
   trackId: string;
   score: number;
@@ -11,145 +7,120 @@ export interface Recommendation {
   isExploration?: boolean;
 }
 
-type PlaylistTrack = {
-  track: Track;
-  addedAt: number;
-};
-
-/* ===========================
-   LEGACY (OPTIONAL, SAFE TO KEEP)
-   =========================== */
-
-export function rankTracksByAffinity(
-  scores: Map<string, number>,
-  limit = 10
-) {
-  return [...scores.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([trackId]) => trackId);
+interface ExplorationOptions {
+  exploreRate?: number;
+  exploreFraction?: number;
+  artistCap?: number;
 }
 
-/* ===========================
-   EXPLAINABLE + EXPLORATORY POLICY
-   =========================== */
-
 export function rankTracksWithReasons(
-  playlistTracks: PlaylistTrack[],
+  playlistTracks: {
+    track: Track;
+    addedAt: number;
+  }[],
   artistWeights: Map<string, number>,
   limit = 5,
-  options?: {
-    exploreRate?: number;      // probability exploration is enabled
-    exploreFraction?: number;  // fraction of slots reserved for exploration
-  }
+  options: ExplorationOptions = {}
 ): Recommendation[] {
   const {
     exploreRate = 0.25,
     exploreFraction = 0.3,
-  } = options ?? {};
+    artistCap = 2,
+  } = options;
 
-  /* ===========================
-     SCORE ALL TRACKS (PURE)
-     =========================== */
+  // 🔒 Policy invariant: never recommend already-included tracks
+  const includedTrackIds = new Set(
+    playlistTracks.map((pt) => pt.track.id)
+  );
 
-  const scored: Recommendation[] = playlistTracks.map(
-    ({ track, addedAt }) => {
-      const artistWeight =
-        track.artists.reduce(
-          (sum, artist) => sum + (artistWeights.get(artist) ?? 0),
-          0
-        ) / track.artists.length;
+  const candidates: Recommendation[] = [];
 
-      const recencyWeight = getRecencyWeight(addedAt);
+  for (const { track, addedAt } of playlistTracks) {
+    if (includedTrackIds.has(track.id)) continue;
 
-      const score =
-        artistWeight * 0.6 +
-        recencyWeight * 0.4;
+    // --- artist affinity ---
+    const artistWeight =
+      track.artists.reduce(
+        (sum, artist) => sum + (artistWeights.get(artist) ?? 0),
+        0
+      ) / track.artists.length;
 
-      const reasons: string[] = [];
+    // --- recency signal ---
+    const recencyWeight = getRecencyWeight(addedAt);
 
-      if (artistWeight > 0.15) {
-        reasons.push(
-          `You frequently add tracks by ${track.artists.join(", ")}`
-        );
-      }
+    // --- composite score ---
+    const score = artistWeight * 0.6 + recencyWeight * 0.4;
 
-      if (recencyWeight > 0.6) {
-        reasons.push(
-          `This playlist has recent activity in this style`
-        );
-      }
+    // --- explainability ---
+    const reasons: string[] = [];
 
-      return {
-        trackId: track.id,
-        score,
-        reasons,
-      };
+    if (artistWeight > 0.15) {
+      reasons.push(
+        `You frequently add tracks by ${track.artists.join(", ")}`
+      );
     }
-  );
 
-  /* ===========================
-     EXPLOITATION POOL
-     =========================== */
+    if (recencyWeight > 0.6) {
+      reasons.push(`This playlist has recent activity in this style`);
+    }
 
-  const exploit = [...scored].sort(
-    (a, b) => b.score - a.score
-  );
-
-  /* ===========================
-     DECIDE WHETHER TO EXPLORE
-     =========================== */
-
-  const shouldExplore = Math.random() < exploreRate;
-  if (!shouldExplore) {
-    return exploit.slice(0, limit);
+    candidates.push({
+      trackId: track.id,
+      score,
+      reasons,
+    });
   }
 
-  /* ===========================
-     EXPLORATION POOL
-     =========================== */
+  // --- rank by affinity ---
+  candidates.sort((a, b) => b.score - a.score);
 
-  const explorationCandidates = exploit
-    .slice(Math.floor(exploit.length * 0.5)) // bottom half
-    .map((rec) => ({
-      ...rec,
-      isExploration: true,
-      reasons: [
-        ...rec.reasons,
-        "Exploration pick to broaden your taste",
-      ],
-    }));
+  // --- diversity constraint (artist cap) ---
+  const artistCounts = new Map<string, number>();
+  const diversified: Recommendation[] = [];
 
-  const exploreSlots = Math.max(
-    1,
-    Math.floor(limit * exploreFraction)
-  );
+  for (const rec of candidates) {
+    const track = playlistTracks.find(
+      (pt) => pt.track.id === rec.trackId
+    )?.track;
 
-  const pickedExplore = shuffle(explorationCandidates)
-    .slice(0, exploreSlots);
+    if (!track) continue;
 
-  const pickedExploit = exploit
-    .filter(
-      (rec) =>
-        !pickedExplore.some(
-          (e) => e.trackId === rec.trackId
-        )
-    )
-    .slice(0, limit - exploreSlots);
+    const primaryArtist = track.artists[0];
+    const count = artistCounts.get(primaryArtist) ?? 0;
 
-  return shuffle([...pickedExploit, ...pickedExplore])
-    .slice(0, limit);
-}
+    if (count >= artistCap) continue;
 
-/* ===========================
-   UTILS (PURE)
-   =========================== */
+    artistCounts.set(primaryArtist, count + 1);
+    diversified.push(rec);
 
-function shuffle<T>(arr: T[]): T[] {
-  const copy = [...arr];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
+    if (diversified.length >= limit * 2) break;
   }
-  return copy;
+
+  // --- exploration injection ---
+  const maxExplore = Math.floor(limit * exploreFraction);
+  let exploreCount = 0;
+  const results: Recommendation[] = [];
+
+  for (const rec of diversified) {
+    if (results.length >= limit) break;
+
+    const shouldExplore =
+      exploreCount < maxExplore && Math.random() < exploreRate;
+
+    if (shouldExplore) {
+      results.push({
+        ...rec,
+        isExploration: true,
+        reasons: [
+          ...rec.reasons,
+          "Adding variety to avoid over-representing one artist",
+        ],
+      });
+      exploreCount++;
+    } else {
+      results.push(rec);
+    }
+  }
+
+  return results;
 }
