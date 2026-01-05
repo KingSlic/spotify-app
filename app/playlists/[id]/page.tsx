@@ -1,4 +1,4 @@
-import { fetchById, fetchTracksForPlaylist } from "@/lib/api";
+import { fetchById, fetchPlaylistTracksWithMeta, fetchTracksForPlaylist } from "@/lib/api";
 import PlaylistClient from "./PlaylistClient";
 
 
@@ -17,7 +17,7 @@ export default async function PlaylistPage({
 
   // Load playlist + associated tracks
   const playlist = await fetchById(id);
-  const tracks = await fetchTracksForPlaylist(id);
+  const playlistTracks = await fetchPlaylistTracksWithMeta(id);
 
 
   // Handle not found
@@ -62,7 +62,7 @@ export default async function PlaylistPage({
           <p className="text-sm text-zinc-400">
             {playlist.creator}
             {" • "}
-            {tracks.length} songs
+            {playlistTracks.length} songs
           </p>
         </div>
       </div>
@@ -72,7 +72,7 @@ export default async function PlaylistPage({
       <PlaylistClient
         mode="view"
         playlist={playlist}
-        tracks={tracks}
+        playlistTracks={playlistTracks}
       />
 
     </div>

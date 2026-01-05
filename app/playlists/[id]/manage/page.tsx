@@ -3,6 +3,7 @@
 import {
   fetchPlaylistById,
   fetchAllTracks,
+  fetchPlaylistTracksWithMeta,
 } from "@/lib/api";
 import PlaylistClient from "../PlaylistClient";
 
@@ -20,6 +21,8 @@ export default async function ManagePlaylistPage({
   // Authoritative data
   const playlist = await fetchPlaylistById(id);
   const tracks = await fetchAllTracks();
+  const playlistTracks = await fetchPlaylistTracksWithMeta(id);
+
 
   if (!playlist) {
     return (
@@ -44,9 +47,9 @@ export default async function ManagePlaylistPage({
 
       {/* TRACK TABLE (MoodBoard View) */}
       <PlaylistClient
-      mode="manage"
         tracks={tracks}
         playlist={playlist}
+        playlistTracks={playlistTracks}
       />
     </div>
   );

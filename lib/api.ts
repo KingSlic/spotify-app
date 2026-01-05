@@ -58,6 +58,26 @@ export async function fetchAllTracks() {
   return res.json();
 }
 
+export async function fetchPlaylistTracksWithMeta(playlistId: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "http://localhost:3000";
+
+  try {
+    const res = await fetch(`${baseUrl}/api/playlists/${playlistId}/tracks`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) {
+      console.warn("Playlist tracks fetch failed:", res.status);
+      return []; // 🔑 NEVER throw in SSR
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.error("Playlist tracks fetch error:", err);
+    return []; // 🔑 NEVER throw in SSR
+  }
+}
+
 export async function getPlaylistsBySection(): Promise<SectionWithPlaylists[]> {
   const res = await fetch(`${API_BASE}/playlists`, {
     cache: "no-store",
@@ -81,7 +101,6 @@ export async function getPlaylistsLayout() {
 
   const data = await res.json();
   return data.sections;
-  
 }
 
 export async function getSections(): Promise<Section[]> {

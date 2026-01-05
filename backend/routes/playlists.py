@@ -64,10 +64,15 @@ def get_playlist_tracks(playlist_id):
     playlist = get_playlist_by_id(playlist_id)
 
     if not playlist:
-        return jsonify({"error": "Playlist not found"}), 404
+        return jsonify([]), 200
+
     tracks = get_tracks_for_playlist(playlist_id)
 
-    return jsonify(tracks)
+    results = []
+    for track in tracks:
+        results.append({"track": track, "addedAt": 0})  # placeholder for now
+
+    return jsonify(results), 200
 
 
 # =====================================================
