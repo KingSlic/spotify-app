@@ -10,6 +10,7 @@ import { rankTracksWithReasons } from "@/lib/recommendations/playlist";
 import { useEffect, useMemo, useState } from "react";
 import ReadOnlyTrackList from "./components/ReadOnlyTrackList";
 import TrackTable from "./components/TrackTable";
+import BulkActionBar from "./components/BulkActionBar";
 
 /* ===========================
    TYPES
@@ -37,8 +38,8 @@ type Recommendation = {
 
 type Props = {
   playlist: any;
-  playlistTracks: PlaylistTrack[];
-  tracks?: Track[]; // only present in manage mode
+  playlistTracks: any[];
+  tracks?: any[]; // only present in manage mode
   mode?: "view" | "manage";
 };
 
@@ -59,9 +60,83 @@ export default function PlaylistClient({
      =========================== */
 
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const selectedCount = mode === "manage" ? selected.size : 0;
   const [included, setIncluded] = useState<Set<string>>(
     new Set(playlist.trackIds ?? [])
   );
+
+  /* ===========================
+   BULK ACTION DERIVED STATE
+   =========================== */
+
+const canAdd =
+  mode === "manage" &&
+  [...selected].some((id) => !included.has(id));
+
+const canRemove =
+  mode === "manage" &&
+  [...selected].some((id) => included.has(id));
+
+/* ===========================
+   BULK ACTION HANDLERS
+   =========================== */
+
+function clearSelection() {
+  setSelected(new Set());
+}
+
+async function bulkAdd() {
+  if (mode !== "manage") return;
+
+  const prev = new Set(included);
+
+  const targets = [...selected].filter((id) => !included.has(id));
+  if (targets.length === 0) return;
+
+  setIncluded((curr) => {
+    const next = new Set(curr);
+    targets.forEach((id) => next.add(id));
+    return next;
+  });
+
+  try {
+    await Promise.all(
+      targets.map((id) =>
+        toggleTrackInPlaylist(playlistId, id, "add")
+      )
+    );
+    clearSelection();
+  } catch {
+    setIncluded(prev);
+  }
+}
+
+async function bulkRemove() {
+  if (mode !== "manage") return;
+
+  const prev = new Set(included);
+
+  const targets = [...selected].filter((id) => included.has(id));
+  if (targets.length === 0) return;
+
+  setIncluded((curr) => {
+    const next = new Set(curr);
+    targets.forEach((id) => next.delete(id));
+    return next;
+  });
+
+  try {
+    await Promise.all(
+      targets.map((id) =>
+        toggleTrackInPlaylist(playlistId, id, "remove")
+      )
+    );
+    clearSelection();
+  } catch {
+    setIncluded(prev);
+  }
+}
+
 
   /* ===========================
      ANALYTICS SOURCE (EXPLICIT)
@@ -255,6 +330,19 @@ export default function PlaylistClient({
           onToggleTrack={toggleInclude}
           onToggleSelect={toggleSelect}
           mode="manage"
+        />
+      )}
+
+      {/* 🔹 Bulk Action Bar */}
+
+      {mode === "manage" && (
+        <BulkActionBar
+          selectedCount={selectedCount}
+          canAdd={canAdd}
+          canRemove={canRemove}
+          onAdd={bulkAdd}
+          onRemove={bulkRemove}
+          onClear={clearSelection}
         />
       )}
     </div>

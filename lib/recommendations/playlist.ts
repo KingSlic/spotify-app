@@ -7,12 +7,6 @@ export interface Recommendation {
   isExploration?: boolean;
 }
 
-interface ExplorationOptions {
-  exploreRate?: number;
-  exploreFraction?: number;
-  artistCap?: number;
-}
-
 export function rankTracksWithReasons(
   playlistTracks: {
     track: Track;
@@ -24,39 +18,36 @@ export function rankTracksWithReasons(
     excludeTrackIds?: Set<string>;
     exploreRate?: number;
     exploreFraction?: number;
+    artistCap?: number;
   }
 ): Recommendation[] {
+
+  // 🔒 Policy defaults (self-contained)
+  const artistCap = options?.artistCap ?? 2;
+  const exploreRate = options?.exploreRate ?? 0;
+  const exploreFraction = options?.exploreFraction ?? 0;
+
   // 🔒 Policy invariant: never recommend already-included tracks
+  const includedTrackIds = new Set(
+    playlistTracks.map((pt) => pt.track.id)
+  );
+
+  const exclude = options?.excludeTrackIds ?? includedTrackIds;
 
   const recommendations: Recommendation[] = [];
 
-  const {
-    artistCap = Infinity,
-    exploreRate = 0,
-    exploreFraction = 0,
-  } = options || {}
-
-  // console.log({ artistCap, exploreRate, exploreFraction });
-
-
   for (const { track, addedAt } of playlistTracks) {
-    const exclude = options?.excludeTrackIds;
-    if (exclude?.has(track.id)) continue;
+    if (exclude.has(track.id)) continue;
 
-    // --- artist affinity ---
     const artistWeight =
       track.artists.reduce(
         (sum, artist) => sum + (artistWeights.get(artist) ?? 0),
         0
       ) / track.artists.length;
 
-    // --- recency signal ---
     const recencyWeight = getRecencyWeight(addedAt);
-
-    // --- composite score ---
     const score = artistWeight * 0.6 + recencyWeight * 0.4;
 
-    // --- explainability ---
     const reasons: string[] = [];
 
     if (artistWeight > 0.15) {
@@ -67,19 +58,11 @@ export function rankTracksWithReasons(
       reasons.push(`This playlist has recent activity in this style`);
     }
 
-    // console.log("excluded", track.id);
-
-    recommendations.push({
-      trackId: track.id,
-      score,
-      reasons,
-    });
+    recommendations.push({ trackId: track.id, score, reasons });
   }
 
-  // --- rank by affinity ---
   recommendations.sort((a, b) => b.score - a.score);
 
-  // --- diversity constraint (artist cap) ---
   const artistCounts = new Map<string, number>();
   const diversified: Recommendation[] = [];
 
@@ -90,18 +73,17 @@ export function rankTracksWithReasons(
 
     if (!track) continue;
 
-    const primaryArtist = track.artists[0];
-    const count = artistCounts.get(primaryArtist) ?? 0;
+    const artist = track.artists[0];
+    const count = artistCounts.get(artist) ?? 0;
 
     if (count >= artistCap) continue;
 
-    artistCounts.set(primaryArtist, count + 1);
+    artistCounts.set(artist, count + 1);
     diversified.push(rec);
 
     if (diversified.length >= limit * 2) break;
   }
 
-  // --- exploration injection ---
   const maxExplore = Math.floor(limit * exploreFraction);
   let exploreCount = 0;
   const results: Recommendation[] = [];
@@ -112,19 +94,20 @@ export function rankTracksWithReasons(
     const shouldExplore =
       exploreCount < maxExplore && Math.random() < exploreRate;
 
-    if (shouldExplore) {
-      results.push({
-        ...rec,
-        isExploration: true,
-        reasons: [
-          ...rec.reasons,
-          "Adding variety to avoid over-representing one artist",
-        ],
-      });
-      exploreCount++;
-    } else {
-      results.push(rec);
-    }
+    results.push(
+      shouldExplore
+        ? {
+            ...rec,
+            isExploration: true,
+            reasons: [
+              ...rec.reasons,
+              "Adding variety to avoid over-representing one artist",
+            ],
+          }
+        : rec
+    );
+
+    if (shouldExplore) exploreCount++;
   }
 
   return results;

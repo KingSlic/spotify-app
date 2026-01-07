@@ -15,8 +15,8 @@ interface TrackTableProps {
   tracks: Track[];
   included: Set<string>;
   selected: Set<string>;
-  onToggleTrack?: (id: string) => void;
-  onToggleSelect?: (id: string) => void;
+  onToggleTrack: (id: string) => void;
+  onToggleSelect: (id: string) => void;
   mode: "view" | "manage";
 }
 
@@ -67,16 +67,8 @@ export default function TrackTable({
             isIncluded={included.has(track.id)}
             isSelected={selected.has(track.id)}
             onPlay={() => setActiveTrackId(track.id)}
-            onToggleInclude={
-              mode === "manage" && onToggleTrack
-                ? () => onToggleTrack(track.id)
-                : undefined
-            }
-            onToggleSelect={
-              mode === "manage" && onToggleSelect
-                ? () => onToggleSelect(track.id)
-                : undefined
-            }
+            onToggleInclude={() => onToggleTrack(track.id)}
+            onToggleSelect={() => onToggleSelect(track.id)}
             mode={mode}
           />
         ))}

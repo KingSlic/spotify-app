@@ -34,7 +34,7 @@ export default function Section({ section, playlists }: Props) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+      <div className="grid grid-flow-col auto-cols-[180px] gap-4 overflow-x-auto">
         {playlists.map((playlist) => (
           <PlaylistCard
             key={playlist.id}

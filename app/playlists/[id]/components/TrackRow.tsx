@@ -90,7 +90,7 @@ export default function TrackRow({
       "
     >
       {/* SELECT BOX (manage-only) */}
-      {isManage ? (
+      {mode === "manage" && (
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -122,8 +122,6 @@ export default function TrackRow({
             </svg>
           )}
         </button>
-      ) : (
-        <span />
       )}
 
       {/* INDEX / PLAY ICON */}
@@ -149,19 +147,17 @@ export default function TrackRow({
       <span className="text-sm text-zinc-400 truncate">{track.album}</span>
 
       {/* ADD / REMOVE TOGGLE (manage-only) */}
-      {isManage ? (
+      {mode === "manage" && (
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onToggleInclude?.();
+            onToggleInclude();
           }}
           className="flex items-center justify-start text-zinc-400 hover:text-white"
           aria-label={isIncluded ? "Remove from playlist" : "Add to playlist"}
         >
           {isIncluded ? <CheckIcon /> : <PlusIcon />}
         </button>
-      ) : (
-        <span />
       )}
 
       {/* DURATION */}

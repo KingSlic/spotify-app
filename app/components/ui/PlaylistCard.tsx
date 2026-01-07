@@ -69,7 +69,7 @@ export default function PlaylistCard({
             e.currentTarget.src = "https://picsum.photos/600?grayscale";
           }}
           className="
-            w-full h-full object-cover
+            w-[180px] shrink-0 h-full object-cover
             transition-transform duration-200
             group-hover:scale-105
           "
