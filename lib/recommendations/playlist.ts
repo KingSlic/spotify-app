@@ -20,23 +20,28 @@ export function rankTracksWithReasons(
   }[],
   artistWeights: Map<string, number>,
   limit = 5,
-  options: ExplorationOptions = {}
+  options?: {
+    excludeTrackIds?: Set<string>;
+    exploreRate?: number;
+    exploreFraction?: number;
+  }
 ): Recommendation[] {
-  const {
-    exploreRate = 0.25,
-    exploreFraction = 0.3,
-    artistCap = 2,
-  } = options;
-
   // 🔒 Policy invariant: never recommend already-included tracks
-  const includedTrackIds = new Set(
-    playlistTracks.map((pt) => pt.track.id)
-  );
 
-  const candidates: Recommendation[] = [];
+  const recommendations: Recommendation[] = [];
+
+  const {
+    artistCap = Infinity,
+    exploreRate = 0,
+    exploreFraction = 0,
+  } = options || {}
+
+  // console.log({ artistCap, exploreRate, exploreFraction });
+
 
   for (const { track, addedAt } of playlistTracks) {
-    if (includedTrackIds.has(track.id)) continue;
+    const exclude = options?.excludeTrackIds;
+    if (exclude?.has(track.id)) continue;
 
     // --- artist affinity ---
     const artistWeight =
@@ -55,16 +60,16 @@ export function rankTracksWithReasons(
     const reasons: string[] = [];
 
     if (artistWeight > 0.15) {
-      reasons.push(
-        `You frequently add tracks by ${track.artists.join(", ")}`
-      );
+      reasons.push(`You frequently add tracks by ${track.artists.join(", ")}`);
     }
 
     if (recencyWeight > 0.6) {
       reasons.push(`This playlist has recent activity in this style`);
     }
 
-    candidates.push({
+    // console.log("excluded", track.id);
+
+    recommendations.push({
       trackId: track.id,
       score,
       reasons,
@@ -72,13 +77,13 @@ export function rankTracksWithReasons(
   }
 
   // --- rank by affinity ---
-  candidates.sort((a, b) => b.score - a.score);
+  recommendations.sort((a, b) => b.score - a.score);
 
   // --- diversity constraint (artist cap) ---
   const artistCounts = new Map<string, number>();
   const diversified: Recommendation[] = [];
 
-  for (const rec of candidates) {
+  for (const rec of recommendations) {
     const track = playlistTracks.find(
       (pt) => pt.track.id === rec.trackId
     )?.track;
