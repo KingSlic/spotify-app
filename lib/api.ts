@@ -28,7 +28,7 @@ export type Section = {
   id: string;
   title: string;
   order: number;
-  showAllHref: string | null;
+  showAllHref?: string;//| null
 };
 
 export type Playlist = {

@@ -7,7 +7,7 @@ export interface Playlist {
   subtitle?: string;
   type: PlaylistKind;
   image: string;
-  href: string;
+  href: `/playlists/${string}`
   creator?: string;
   trackIds: string[]; // references Track.id
 }

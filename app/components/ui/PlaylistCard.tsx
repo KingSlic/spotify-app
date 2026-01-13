@@ -20,7 +20,7 @@ export default function PlaylistCard({
   const isCompact = variant === "compact";
 
   async function handleDelete(e: React.MouseEvent) {
-    e.stopPropagation(); // prevent card click navigation
+    e.stopPropagation();
 
     try {
       await deletePlaylist(playlist.id);
@@ -36,29 +36,29 @@ export default function PlaylistCard({
       if (result === false) return;
     }
 
-    if (href) {
-      router.push(href);
-    }
+    if (href) router.push(href);
   };
 
   return (
     <div
       onClick={handleClick}
       className={`
-        group
+        group relative
         flex flex-col
         cursor-pointer
         rounded-md
-        transition
+        bg-transparent
+        transition-all duration-200 ease-out
+        hover:-translate-y-1
         hover:bg-[#1a1a1a]
+        hover:shadow-xl hover:shadow-black/40
         ${isCompact ? "w-32 p-2 gap-2" : "w-40 p-3 gap-3"}
       `}
     >
-      {/* IMAGE */}
+      {/* IMAGE WRAPPER */}
       <div
         className={`
-          aspect-square overflow-hidden
-          transition-all duration-200
+          relative aspect-square overflow-hidden
           ${type === "artist" ? "rounded-full" : "rounded-md"}
         `}
       >
@@ -69,11 +69,39 @@ export default function PlaylistCard({
             e.currentTarget.src = "https://picsum.photos/600?grayscale";
           }}
           className="
-            w-[180px] shrink-0 h-full object-cover
-            transition-transform duration-200
+            w-full h-full object-cover
+            transition-transform duration-300
             group-hover:scale-105
           "
         />
+
+        {/* ▶ PLAY BUTTON */}
+        <div
+          className="
+            absolute bottom-2 right-2
+            opacity-0 translate-y-1
+            group-hover:opacity-100 group-hover:translate-y-0
+            transition-all duration-200
+          "
+        >
+          <button
+            className="
+              w-10 h-10
+              rounded-full
+              bg-[#1DB954]
+              flex items-center justify-center
+              shadow-lg shadow-black/50
+              hover:scale-105
+            "
+            aria-label="Play"
+            onClick={(e) => {
+              e.stopPropagation();
+              // playback hook later
+            }}
+          >
+            ▶
+          </button>
+        </div>
       </div>
 
       {/* TEXT */}
@@ -94,7 +122,7 @@ export default function PlaylistCard({
         )}
       </div>
 
-      {/* DELETE (minimal, intentional) */}
+      {/* DELETE (INTENTIONAL, QUIET) */}
       {!isCompact && (
         <button
           onClick={handleDelete}

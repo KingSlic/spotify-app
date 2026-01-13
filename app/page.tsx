@@ -2,13 +2,13 @@ import { getPlaylistsLayout } from "@/lib/api";
 import Section from "./components/layout/Section";
 
 export default async function HomePage() {
-  const data = await getPlaylistsLayout();
+  const sections = await getPlaylistsLayout();
 
-  console.log("PLAYLIST LAYOUT:", data);
+  console.log("PLAYLIST LAYOUT:", sections);
 
   return (
     <main>
-      {data.map((section) => (
+      {sections.map((section) => (
         <Section
           key={section.id}
           section={section}
