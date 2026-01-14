@@ -39,6 +39,19 @@ export default function PlaylistCard({
     if (href) router.push(href);
   };
 
+  function generatedCoverStyle(seed: string) {
+    let hash = 0;
+    for (let i = 0; i < seed.length; i++) {
+      hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+    }
+    const a = Math.abs(hash) % 360;
+    const b = (a + 60) % 360;
+
+    return {
+      background: `linear-gradient(135deg, hsl(${a} 70% 45%), hsl(${b} 70% 45%))`,
+    };
+  }
+
   return (
     <div
       onClick={handleClick}
@@ -62,17 +75,9 @@ export default function PlaylistCard({
           ${type === "artist" ? "rounded-full" : "rounded-md"}
         `}
       >
-        <img
-          src={image}
-          alt={title}
-          onError={(e) => {
-            e.currentTarget.src = "https://picsum.photos/600?grayscale";
-          }}
-          className="
-            w-full h-full object-cover
-            transition-transform duration-300
-            group-hover:scale-105
-          "
+        <div
+          className="w-full h-full"
+          style={generatedCoverStyle(image.seed)}
         />
 
         {/* ▶ PLAY BUTTON */}
@@ -116,9 +121,7 @@ export default function PlaylistCard({
         </p>
 
         {!isCompact && subtitle && (
-          <p className="text-zinc-400 text-xs truncate">
-            {subtitle}
-          </p>
+          <p className="text-zinc-400 text-xs truncate">{subtitle}</p>
         )}
       </div>
 

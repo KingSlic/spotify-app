@@ -4,7 +4,7 @@ import Section from "./components/layout/Section";
 export default async function HomePage() {
   const sections = await getPlaylistsLayout();
 
-  console.log("PLAYLIST LAYOUT:", sections);
+  console.log("SECTIONS:", JSON.stringify(sections, null, 2));
 
   return (
     <main>

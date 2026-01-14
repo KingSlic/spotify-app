@@ -31,18 +31,25 @@ export type Section = {
   showAllHref?: string;//| null
 };
 
+export type GeneratedImage = {
+  kind: "generated";
+  seed: string;
+}
+
 export type Playlist = {
   id: string;
   title: string;
-  subtitle: string;
-  image: string;
+  subtitle?: string | null;
+  image: GeneratedImage;
   href?: string | null;
-  order: number;
-  section: string;
+  sectionId: string;
 };
 
 export type SectionWithPlaylists = {
   id: string;
+  title: string;
+  order: number;
+  showAllHref?: string | null;
   playlists: Playlist[];
 };
 
@@ -90,17 +97,23 @@ export async function getPlaylistsBySection(): Promise<SectionWithPlaylists[]> {
 
 // Mirrors the backend contract
 
-export async function getPlaylistsLayout() {
-  const res = await fetch("http://127.0.0.1:5000/api/playlists", {
-    cache: "no-store",
-  });
+export async function getPlaylistsLayout(): Promise<SectionWithPlaylists[]> {
+  try {
+    const res = await fetch(`${API_BASE}/playlists`, {
+      cache: "no-store",
+    });
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch playlists layout");
+    if (!res.ok) {
+      console.warn("Playlists layout fetch failed:", res.status);
+      return [];
+    }
+
+    const data = await res.json();
+    return data.sections ?? [];
+  } catch (err) {
+    console.error("Playlists layout error:", err);
+    return [];
   }
-
-  const data = await res.json();
-  return data.sections;
 }
 
 export async function getSections(): Promise<Section[]> {
