@@ -1,5 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
+from db import init_db
 from routes.playlists import playlists_bp
 from routes.sections import sections_bp
 from routes.tracks import tracks_bp
@@ -10,6 +11,9 @@ def create_app():
 
     # Allows requests from frontend
     CORS(app)
+
+    # Database (used by seeded/ORM-backed routes)
+    init_db(app)
 
     app.register_blueprint(playlists_bp)
     app.register_blueprint(sections_bp)
