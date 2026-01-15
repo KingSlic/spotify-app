@@ -1,169 +1,102 @@
 "use client";
 
-import { useState } from "react";
-
-interface Track {
+type Track = {
   id: string;
   title: string;
   artists: string[];
-  album: string;
-  duration: string;
-}
+  album?: string;
+  duration?: string;
+};
 
 interface TrackRowProps {
   track: Track;
   index: number;
-  active?: boolean;
-  isIncluded: boolean;
-  isSelected: boolean;
   mode: "view" | "manage";
-  onToggleInclude?: () => void;
-  onToggleSelect?: () => void;
-  onPlay?: () => void;
-}
-
-function PlusIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5">
-      <circle
-        cx="12"
-        cy="12"
-        r="10"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M12 8v8M8 12h8"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="w-5 h-5">
-      <circle cx="12" cy="12" r="10" fill="#1DB954" />
-      <path
-        d="M8.5 12.5l2.5 2.5 4.5-5"
-        fill="none"
-        stroke="white"
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  checked: boolean;
+  onToggle: () => void;
 }
 
 export default function TrackRow({
   track,
   index,
-  active = false,
-  isIncluded,
-  isSelected,
   mode,
-  onToggleInclude,
-  onToggleSelect,
-  onPlay,
+  checked,
+  onToggle,
 }: TrackRowProps) {
-  const [hover, setHover] = useState(false);
-
-  const isManage = mode === "manage";
+  const inPlaylist = true; // placeholder until backend wiring
 
   return (
     <div
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onClick={onPlay}
       className="
-        grid grid-cols-[32px_40px_2fr_2fr_24px_56px]
+        group
+        grid grid-cols-[32px_48px_3fr_2fr_48px_64px]
+        gap-4
         px-4 py-2
-        cursor-pointer
-        rounded-md
-        transition-colors
-        hover:bg-zinc-800/60
-        items-center
+        text-sm
+        rounded
+        hover:bg-white/5
       "
     >
-      {/* SELECT BOX (manage-only) */}
-      {mode === "manage" && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleSelect?.();
-          }}
-          className={`
-            w-4 h-4
-            border
-            rounded-[2px]
-            flex items-center justify-center
-            transition-colors
-            ${
-              isSelected
-                ? "bg-[#1DB954] border-[#1DB954]"
-                : "border-zinc-500 hover:border-white"
-            }
-          `}
-        >
-          {isSelected && (
-            <svg viewBox="0 0 16 16" className="w-3 h-3">
-              <path
-                d="M3.5 8.5l3 3 6-6"
-                fill="none"
-                stroke="black"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </button>
-      )}
+      {/* CHECKBOX */}
+      <div className="flex items-center justify-center">
+        {mode === "manage" && (
+          <input
+            type="checkbox"
+            checked={checked}
+            onChange={onToggle}
+            className="
+              w-4 h-4
+              accent-green-500
+              opacity-0
+              group-hover:opacity-100
+            "
+          />
+        )}
+      </div>
 
-      {/* INDEX / PLAY ICON */}
-      <span
-        className={`flex items-center justify-start w-4 ${
-          active ? "text-[#1DB954]" : "text-zinc-400"
-        }`}
-      >
-        {hover ? <span className="text-white">▶</span> : active ? "🔊" : index + 1}
-      </span>
+      {/* INDEX */}
+      <div className="text-zinc-400 group-hover:text-white">{index + 1}</div>
 
       {/* TITLE + ARTIST */}
-      <div className="flex flex-col truncate min-w-0">
-        <span className={`font-medium truncate ${active ? "text-[#1DB954]" : "text-white"}`}>
-          {track.title}
-        </span>
-        <span className="text-sm text-zinc-400 truncate">
+      <div className="flex flex-col min-w-0">
+        <span className="text-white truncate">{track.title}</span>
+        <span className="text-zinc-400 text-xs truncate">
           {track.artists.join(", ")}
         </span>
       </div>
 
       {/* ALBUM */}
-      <span className="text-sm text-zinc-400 truncate">{track.album}</span>
+      <div className="text-zinc-400 truncate">{track.album ?? "—"}</div>
 
-      {/* ADD / REMOVE TOGGLE (manage-only) */}
-      {mode === "manage" && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleInclude();
-          }}
-          className="flex items-center justify-start text-zinc-400 hover:text-white"
-          aria-label={isIncluded ? "Remove from playlist" : "Add to playlist"}
-        >
-          {isIncluded ? <CheckIcon /> : <PlusIcon />}
-        </button>
-      )}
+      {/* ADD / REMOVE TOGGLE */}
+      <div className="flex items-center justify-center">
+        {mode === "manage" && (
+          <button
+            className={`
+        w-7 h-7
+        flex items-center justify-center
+        rounded-full
+        transition
+        opacity-0
+        group-hover:opacity-100
+
+        ${
+          inPlaylist
+            ? "bg-green-500 text-black"
+            : "border border-white text-white"
+        }
+      `}
+            title={inPlaylist ? "Remove from playlist" : "Add to playlist"}
+          >
+            {inPlaylist ? "✓" : "+"}
+          </button>
+        )}
+      </div>
 
       {/* DURATION */}
-      <span className="text-sm text-zinc-400 text-right whitespace-nowrap">
-        {track.duration}
-      </span>
+      <div className="text-zinc-400 text-right pr-1">
+        {track.duration ?? "—"}
+      </div>
     </div>
   );
 }

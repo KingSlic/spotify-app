@@ -2,95 +2,46 @@ import random
 import time
 
 # ----------------------------------------
-# GLOBAL TRACK POOL (normalized)
+# GLOBAL TRACK POOL
 # ----------------------------------------
 
-# You can expand this list later or generate it procedurally.
-# Track IDs are canonical and referenced everywhere else.
 tracks = [
     {
         "id": f"t-{i}",
         "title": f"Track {i}",
         "artists": [f"Artist {i % 5}"],
         "album": f"Album {i % 3}",
-        "duration": f"{random.randint(2,4)}:{random.randint(0,59):02d}",  # "mm:ss"
+        "duration": f"{random.randint(2,4)}:{random.randint(0,59):02d}",
         "image": f"https://picsum.photos/seed/track-{i}/300",
     }
-    for i in range(60)  # global pool size
+    for i in range(60)
 ]
 
 
 # ----------------------------------------
-# JOIN TABLE: playlist_tracks
+# PLAYLIST ↔ TRACK JOIN TABLE
 # ----------------------------------------
 
+playlist_tracks = {}
 
 
 def generate_playlist_tracks(seed, size=20):
     rng = random.Random(seed)
     now = int(time.time())
 
-    # ensure sample size viability
-    size = min(size, len(tracks))
-    chosen = rng.sample(tracks, size)
+    chosen = rng.sample(tracks, min(size, len(tracks)))
 
     return [
         {
-            "id": t["id"],  # normalized reference to global tracks
-            "addedAt": now - rng.randint(0, 60 * 60 * 24 * 30),  # within last 30 days
+            "id": t["id"],
+            "addedAt": now - rng.randint(0, 60 * 60 * 24 * 30),
         }
         for t in chosen
     ]
 
 
-playlist_tracks = {}  # map: playlist_id → [join]
-
-
 # ----------------------------------------
-# PLAYLISTS (normalized)
-# Do NOT embed tracks; just store trackIds
-# ----------------------------------------
-
-
-def playlist_image(playlist_id):
-    return f"playlist:{playlist_id}"
-
-
-def generate_playlists_for_section(section_id, count=6):
-
-    rng = random.Random(str(section_id))
-    playlists = []
-
-    for i in range(count):
-        playlist_id = f"pl-{section_id}-{i}"
-        joins = generate_playlist_tracks(seed=playlist_id, size=20)
-
-        # store join objects in map
-        playlist_tracks[playlist_id] = joins
-
-        playlists.append(
-            {
-                "id": playlist_id,
-                "title": f"{section['title']} Playlist {i + 1}",
-                "sectionId": section["id"],
-                "trackIds": [j["id"] for j in joins],
-                "createdAt": int(time.time()) - rng.randint(0, 60 * 60 * 24 * 7),
-                "image": {
-                  "kind": "generated",
-                  "seed": playlist_image(playlist_id),
-                },
-                "type": "playlist",
-                "creator": "Spotify",
-                "subtitle": "Based on your activity",
-                "href": f"/playlists/{playlist_id}",
-            }
-        )
-
-    return playlists
-
-
-# ----------------------------------------
-# SECTIONS (UI only)
+# SECTIONS (BACKEND-OWNED DATA)
 # ----------------------------------------
 
 SECTIONS = [
@@ -120,19 +71,65 @@ SECTIONS = [
     },
 ]
 
-playlists_by_section = {
-    section["id"]: generate_playlists_for_section(section["id"], count=6)
-    for section in SECTIONS
+SECTION_PLAYLIST_TITLES = {
+    "recently_played": lambda i: f"Daily Mix {i + 1}",
+    "made_for_you": lambda i: f"Daily Mix {i + 1}",
+    "your_weekly_vibe": lambda i: f"Your Vibe {i + 1}",
+    "chill_mode_engaged": lambda i: f"Chill Mix {i + 1}",
 }
 
 
 # ----------------------------------------
-# EXPORT-LIKE HELPERS (optional)
+# PLAYLIST GENERATION (SIMPLE + SAFE)
 # ----------------------------------------
 
 
-def get_all_tracks():
-    return tracks
+def playlist_image(playlist_id):
+    return f"https://picsum.photos/seed/{playlist_id}/300"
+
+
+def generate_playlists_for_section(section, count=6):
+    rng = random.Random(section["id"])
+    playlists = []
+
+    title_fn = SECTION_PLAYLIST_TITLES.get(section["id"], lambda i: f"Playlist {i + 1}")
+
+    for i in range(count):
+        playlist_id = f"pl-{section['id']}-{i}"
+        joins = generate_playlist_tracks(seed=playlist_id)
+
+        playlist_tracks[playlist_id] = joins
+
+        playlists.append(
+            {
+                "id": playlist_id,
+                "title": f"{section['title']} Playlist {i + 1}",
+                "sectionId": section["id"],
+                "trackIds": [j["id"] for j in joins],
+                "createdAt": int(time.time()) - rng.randint(0, 60 * 60 * 24 * 7),
+                "image": playlist_image(playlist_id),  # ✅ STRING
+                "type": "playlist",
+                "creator": "Spotify",
+                "subtitle": "Based on your activity",
+                "href": f"/playlists/{playlist_id}",
+            }
+        )
+
+    return playlists
+
+
+playlists_by_section = {
+    section["id"]: generate_playlists_for_section(section) for section in SECTIONS
+}
+
+
+# ----------------------------------------
+# HELPERS
+# ----------------------------------------
+
+
+def get_sections():
+    return sorted(SECTIONS, key=lambda s: s["order"])
 
 
 def get_playlists_for_section(section_id):
@@ -140,7 +137,7 @@ def get_playlists_for_section(section_id):
 
 
 def get_playlist_by_id(playlist_id):
-    for section_id in SECTIONS:
+    for section_id in playlists_by_section:
         for pl in playlists_by_section[section_id]:
             if pl["id"] == playlist_id:
                 return pl
@@ -151,5 +148,5 @@ def get_playlist_tracks(playlist_id):
     return playlist_tracks.get(playlist_id, [])
 
 
-def get_sections():
-    return sorted(SECTIONS, key=lambda s: s["order"])
+def get_all_tracks():
+    return tracks

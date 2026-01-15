@@ -15,20 +15,22 @@ export default function PlaylistCard({
   onClick,
 }: PlaylistCardProps) {
   const router = useRouter();
-
-  const { image, title, subtitle, type, href } = playlist;
   const isCompact = variant === "compact";
+
+  const { id, title, subtitle, image, href } = playlist;
+
 
   async function handleDelete(e: React.MouseEvent) {
     e.stopPropagation();
 
     try {
-      await deletePlaylist(playlist.id);
+      await deletePlaylist(id);
       router.refresh();
     } catch (err) {
       console.error("Failed to delete playlist", err);
     }
   }
+
 
   const handleClick = () => {
     if (onClick) {
@@ -38,19 +40,6 @@ export default function PlaylistCard({
 
     if (href) router.push(href);
   };
-
-  function generatedCoverStyle(seed: string) {
-    let hash = 0;
-    for (let i = 0; i < seed.length; i++) {
-      hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-    }
-    const a = Math.abs(hash) % 360;
-    const b = (a + 60) % 360;
-
-    return {
-      background: `linear-gradient(135deg, hsl(${a} 70% 45%), hsl(${b} 70% 45%))`,
-    };
-  }
 
   return (
     <div
@@ -68,19 +57,22 @@ export default function PlaylistCard({
         ${isCompact ? "w-32 p-2 gap-2" : "w-40 p-3 gap-3"}
       `}
     >
-      {/* IMAGE WRAPPER */}
-      <div
-        className={`
-          relative aspect-square overflow-hidden
-          ${type === "artist" ? "rounded-full" : "rounded-md"}
-        `}
-      >
-        <div
-          className="w-full h-full"
-          style={generatedCoverStyle(image.seed)}
+      {/* IMAGE */}
+      <div className="relative aspect-square overflow-hidden rounded-md">
+        <img
+          src={image}
+          alt={title}
+          className="
+            w-full h-full object-cover
+            transition-transform duration-300
+            group-hover:scale-105
+          "
+          onError={(e) => {
+            e.currentTarget.src = "https://picsum.photos/600?grayscale";
+          }}
         />
 
-        {/* ▶ PLAY BUTTON */}
+        {/* PLAY BUTTON */}
         <div
           className="
             absolute bottom-2 right-2
@@ -90,19 +82,17 @@ export default function PlaylistCard({
           "
         >
           <button
+            aria-label="Play"
+            onClick={(e) => e.stopPropagation()}
             className="
               w-10 h-10
               rounded-full
               bg-[#1DB954]
               flex items-center justify-center
+              text-black font-bold
               shadow-lg shadow-black/50
               hover:scale-105
             "
-            aria-label="Play"
-            onClick={(e) => {
-              e.stopPropagation();
-              // playback hook later
-            }}
           >
             ▶
           </button>
@@ -121,11 +111,13 @@ export default function PlaylistCard({
         </p>
 
         {!isCompact && subtitle && (
-          <p className="text-zinc-400 text-xs truncate">{subtitle}</p>
+          <p className="text-zinc-400 text-xs truncate">
+            {subtitle}
+          </p>
         )}
       </div>
 
-      {/* DELETE (INTENTIONAL, QUIET) */}
+      {/* DELETE BUTTON */}
       {!isCompact && (
         <button
           onClick={handleDelete}

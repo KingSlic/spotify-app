@@ -15,10 +15,13 @@ export function getRecentlyAdded(playlistTracks: PlaylistTrack[], limit = 5) {
     .map((pt) => pt.track);
 }
 
-export function getArtistCounts(tracks: Track[]) {
+export function getArtistCounts(tracks: any[]) {
   const counts = new Map<string, number>();
 
   for (const track of tracks) {
+    // 🔒 Guard: skip non-track objects
+    if (!track || !Array.isArray(track.artists)) continue;
+
     for (const artist of track.artists) {
       counts.set(artist, (counts.get(artist) ?? 0) + 1);
     }
@@ -26,6 +29,7 @@ export function getArtistCounts(tracks: Track[]) {
 
   return counts;
 }
+
 
 export function getTopArtists(counts: Map<string, number>, limit = 3) {
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit);

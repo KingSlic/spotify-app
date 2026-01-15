@@ -42,6 +42,7 @@ export type Playlist = {
   subtitle?: string | null;
   image: GeneratedImage;
   href?: string | null;
+  order: number;
   sectionId: string;
 };
 
@@ -75,15 +76,17 @@ export async function fetchPlaylistTracksWithMeta(playlistId: string) {
 
     if (!res.ok) {
       console.warn("Playlist tracks fetch failed:", res.status);
-      return []; // 🔑 NEVER throw in SSR
+      return [];
     }
 
-    return await res.json();
+    const data = await res.json();
+    return data.tracks ?? [];   // ✅ THIS IS THE FIX
   } catch (err) {
     console.error("Playlist tracks fetch error:", err);
-    return []; // 🔑 NEVER throw in SSR
+    return [];
   }
 }
+
 
 export async function getPlaylistsBySection(): Promise<SectionWithPlaylists[]> {
   const res = await fetch(`${API_BASE}/playlists`, {

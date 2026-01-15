@@ -20,7 +20,7 @@ export default async function ManagePlaylistPage({
 
   // Authoritative data
   const playlist = await fetchById(id);
-  const tracks = await fetchAllTracks();
+  const allTracks = await fetchAllTracks();
   const playlistTracks = await fetchPlaylistTracksWithMeta(id);
 
 
@@ -47,7 +47,7 @@ export default async function ManagePlaylistPage({
 
       {/* TRACK TABLE (MoodBoard View) */}
       <PlaylistClient
-        tracks={tracks}
+        allTracks={allTracks}
         playlist={playlist}
         playlistTracks={playlistTracks}
         mode="manage"
